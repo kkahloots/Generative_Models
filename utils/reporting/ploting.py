@@ -1,14 +1,15 @@
-import os
-import imageio
 import glob
-import numpy as np
-import matplotlib.pyplot as plt
+import os
+
 import IPython
+import imageio
+import matplotlib.pyplot as plt
 from IPython import display
 
+
 def plot_and_save_generated(generated, epoch, path, gray=True, save=True):
-    n_generated = int(np.sqrt(int(generated.shape[0])))
-    generated = generated[:n_generated**2]
+    #n_generated = int(np.sqrt(int(generated.shape[0])))
+    generated = generated[:36]
     fig = plt.figure(figsize=(6, 6))
     for i in range(generated.shape[0]):
         plt.subplot(6, 6, i+1)

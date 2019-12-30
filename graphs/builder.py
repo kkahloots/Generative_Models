@@ -58,22 +58,26 @@ def create_sequence(lay_shapes, isConv=True, kernel_shape=3, sampling_rate=2, ad
 
     return x
 
-def make_variable(input_shape, output_shape, layers=[], name=None):
-    if isinstance(output_shape, Iterable):
-        output_shape = np.prod(output_shape)
+def make_variable(inputs_shape, outputs_shape, layers=[], name=None):
+    if isinstance(outputs_shape, Iterable):
+        outputs_shape = np.prod(outputs_shape)
     variable = \
         tf.keras.Sequential(
         name = name,
         layers=
         [
-            tf.keras.layers.Input(shape=input_shape),
+            tf.keras.layers.Input(shape=inputs_shape),
         ]
         +
             layers
         +
         [
             tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(output_shape)
+            tf.keras.layers.Dense(outputs_shape),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(rate=0.25),
+            tf.keras.layers.ActivityRegularization(l1=1e-6, l2=1e-6),
+            tf.keras.layers.Activation(None, dtype='float32')
         ]
 
     )
@@ -101,3 +105,5 @@ def make_models(variables_params):
         vars += [var]
     return vars
 
+def run_variable(variable, param):
+    return variable(*param)

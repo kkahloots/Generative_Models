@@ -8,21 +8,22 @@ formatter = ColoredFormatter(LOGFORMAT)
 stream = logging.StreamHandler()
 stream.setLevel(LOG_LEVEL)
 stream.setFormatter(formatter)
-log = logging.getLogger('pythonConfig')
-log.setLevel(LOG_LEVEL)
-log.addHandler(stream)
+logger = logging.getLogger('pythonConfig')
+logger.setLevel(LOG_LEVEL)
+logger.addHandler(stream)
+logger.propagate = False
 
 def log_message(message, log_level=logging.DEBUG):
     message = str(message)
     print()
     if log_level==logging.DEBUG:
-        log.debug(message)
+        logger.debug(message)
     elif log_level==logging.CRITICAL:
-        log.critical(message)
+        logger.critical(message)
     elif log_level==logging.WARN:
-        log.warn(message)
+        logger.warn(message)
     elif log_level==logging.ERROR:
-        log.error(message)
+        logger.error(message)
     else:
-        log.info(message)
+        logger.info(message)
 

@@ -1,8 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
-import numpy as np
 
-def reconstuction_loss(true_x, reconstructed_x):
+def reconstuction_loss(true_x, pred_x):
     """expected log-likelihood of the lower bound. For this we use a bernouilli lower bound
     Computes the Bernoulli loss."""
     # Because true images are not binary, the lower bound in the xent is not zero:
@@ -13,7 +12,10 @@ def reconstuction_loss(true_x, reconstructed_x):
 
     ell = tf.reduce_sum(
         tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=reconstructed_x, labels=true_x),
+            logits=pred_x, labels=true_x),
         axis=[1,2,3])
 
     return ell - loss_lower_bound
+
+#def reconstuction_loss(true_x, pred_x):
+#    return tf.losses.binary_crossentropy(y_true=true_x, y_pred=pred_x, from_logits=True)
