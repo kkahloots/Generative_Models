@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 def generate_batch_factor_code(
         ground_truth_data,
@@ -37,3 +38,16 @@ def generate_batch_factor_code(
                                            current_observations)))
         i += num_points_iter
     return np.transpose(representations), np.transpose(factors)
+
+
+
+def log10(t):
+    """
+    Calculates the base-10 log of each element in t.
+    @param t: The tensor from which to calculate the base-10 log.
+    @return: A tensor with the base-10 log of each element in t.
+    """
+
+    numerator = tf.math.log(t)
+    denominator = tf.math.log(tf.constant(10, dtype=numerator.dtype))
+    return numerator / denominator
