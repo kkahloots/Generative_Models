@@ -1,98 +1,81 @@
-import os
 import tensorflow as tf
+
+
+from graphs.builder import make_models, load_models
 from stats.losses import reconstuction_loss
 from stats.pdfs import log_normal_pdf
-import logging
-from utils.reporting.logging import log_message
-
-from graphs.builder import make_models, load_models, save_models
-def make_cond_vae(model_name, input_shape, latent_dim, variables_params, restore=None):
-    strategy = make_strategy()
-    with strategy.scope():
-        variables_names = ['encoder_mean', 'encoder_logvar', 'decoder']
-        variables = [None for _ in range(len(variables_names))]
-        if restore is None:
-            variables = make_models(variables_params)
-        else:
-            variables = load_models(restore, [model_name+'_'+var for var in variables_names])
-
-        def get_variables():
-            return dict(zip(variables_names, variables))
-
-        def run_variable(var_name, param):
-            return get_variables()[var_name](*param)
-
-        def reparameterize(mean, logvar):
-            eps = tf.random.normal(shape=mean.shape)
-            return eps * tf.exp(logvar * .5) + mean
-
-        def encode(x):
-            mean, logvar = run_variable('encoder_mean', [x]), run_variable('encoder_logvar', [x])
-            z = reparameterize(mean, logvar)
-            return z, mean, logvar
-
-        def decode(z, apply_sigmoid=False):
-            logits = run_variable('decoder', [z])
-            if apply_sigmoid:
-                probs = tf.sigmoid(logits)
-                return tf.reshape(probs, shape=[-1] + [*input_shape])
-            return tf.reshape(logits, shape=[-1] + [*input_shape])
-
-        def compute_losses(func):
-            @tf.function
-            def compute_logpx_z(x):
-                xt, xgt = x[0], x[1]
-                xt, x_logit, z, mean, logvar = func(xt)
-                reconstruction_loss = reconstuction_loss(reconstructed_x=x_logit, true_x=xgt)
-                logpx_z = tf.reduce_mean(-reconstruction_loss)
-                return logpx_z
-
-            @tf.function
-            def compute_logpz(x):
-                xt, xgt = x[0], x[1]
-                xt, x_logit, z, mean, logvar = func(xt)
-                logpz = tf.reduce_mean(log_normal_pdf(z, 0., 0.))
-                return logpz
-
-            @tf.function
-            def compute_logqz_x(x):
-                xt, xgt = x[0], x[1]
-                xt, x_logit, z, mean, logvar = func(xt)
-                logqz_x = tf.reduce_mean(-log_normal_pdf(z, mean, logvar))
-                return logqz_x
-
-            return {'logpx_z': compute_logpx_z, 'logpz': compute_logpz, 'logqz_x': compute_logqz_x}
-
-        @tf.function
-        def generate_sample(eps=None):
-            if eps is None:
-                eps = tf.random.normal(shape=(100, latent_dim))
-            generated = decode(z=eps, apply_sigmoid=True)
-            return generated
-
-    return strategy, get_variables, compute_losses, encode, decode, generate_sample,  save_models, load_models
 
 
-def make_strategy():
-    strategy = None
-    try:
-        tpu_address = 'grpc://' + os.environ['COLAB_TPU_ADDR']
-        cluster_resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu=tpu_address)
-        tf.config.experimental_connect_to_cluster(cluster_resolver)
-        tf.tpu.experimental.initialize_tpu_system(cluster_resolver)
-        strategy = tf.distribute.experimental.TPUStrategy(cluster_resolver)
-        log_message('TPU Strategy ... ', logging.DEBUG)
+def make_cond_vae(model_name, variables_params, restore=None):
+    variables_names = [variables['name'] for variables in variables_params] #['inference',  'generative']
+    variables = make_variables(variables_params=variables_params, model_name=model_name, restore=restore)
 
-    except:
-        try:
-            strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy(
-                tf.distribute.experimental.CollectiveCommunication.NCCL)
-            log_message('MultiWorker Mirrored Strategy ... ', logging.DEBUG)
-        except:
-            strategy = tf.distribute.MirroredStrategy(cross_device_ops=tf.distribute.HierarchicalCopyAllReduce())
-            log_message('Mirrored Strategy ... ', logging.DEBUG)
+    def get_variables():
+        return dict(zip(variables_names, variables))
 
-    if strategy is None:
-        log_message('Cannot make any strategy for training ... ', logging.ERROR)
-        raise NameError('Cannot make any strategy for training ... ')
-    return strategy
+    def loss_functions():
+        return {'logpx_z': compute_logpx_z, 'logpz': compute_logpz, 'logqz_x': compute_logqz_x}
+
+    return get_variables, loss_functions
+
+@tf.function
+def compute_logpx_z(inputs, predictions):
+    x_logit = predictions['x_logit']
+    x = inputs
+    reconstruction_loss = reconstuction_loss(pred_x=x_logit, true_x=x)
+    logpx_z = tf.reduce_mean(-reconstruction_loss)
+    return logpx_z
+
+@tf.function
+def compute_logpz(inputs, predictions):
+    z = predictions['latent']
+    logpz = tf.reduce_mean(log_normal_pdf(z, 0., 0.))
+    return logpz
+
+@tf.function
+def compute_logqz_x(inputs, predictions):
+    x_logit, z, mean, logvar = predictions['x_logit'], predictions['latent'], predictions['mean'], predictions['logvar']
+    logqz_x = tf.reduce_mean(-log_normal_pdf(z, mean, logvar))
+    return logqz_x
+
+
+def make_variables(variables_params, model_name, restore=None):
+    variables_names = [variables['name'] for variables in variables_params]
+    #variables = [None for _ in range(len(variables_names))]
+    if restore is None:
+        variables = make_models(variables_params)
+    else:
+        variables = load_models(restore, [model_name +'_' + var for var in variables_names])
+    return variables
+
+def encode(model, inputs):
+    z = model('inference', [inputs])
+    return z
+
+def decode(model, latent, inputs_shape, apply_sigmoid=False):
+    logits = model('generative', [latent])
+    if apply_sigmoid:
+        probs = tf.sigmoid(logits)
+        return tf.reshape(probs, shape=[-1] + [*inputs_shape])
+    return tf.reshape(logits, shape=[-1] + [*inputs_shape])
+
+@tf.function
+def generate_sample(model, inputs_shape, latent_shape, eps=None):
+    if eps is None:
+        eps = tf.random.normal(shape=latent_shape)
+    generated = decode(model=model, latent=eps, inputs_shape=inputs_shape, apply_sigmoid=True)
+    return generated
+
+#Previous compute loss
+#No diffrence observed between cond and normal except like in line 76
+# def compute_losses(func):
+#     @tf.function
+#     def compute_logpx_z(x):
+#         xt, xgt = x[0], x[1]
+#         xt, x_logit, z = func(xt)
+#         reconstruction_loss = reconstuction_loss(reconstructed_x=x_logit, true_x=xgt)
+#         logpx_z = tf.reduce_mean(-reconstruction_loss)
+#         return logpx_z
+#
+#     return {'logpx_z': compute_logpx_z}
+

@@ -32,7 +32,7 @@ class AE():
         get_variables, loss_functions= \
             self.make_ae(
                 model_name=model_name,
-                 variables_params=variables_params,
+                variables_params=variables_params,
                 restore=restore
             )
         self.inputs_shape = inputs_shape
@@ -98,24 +98,35 @@ class AE():
                 vars += var.trainable_variables
             return vars
 
-        def train_step(train_x, train_xt=None):
+        def train_step(train_x, train_xgt=None):
+            """
+            train_x input frames
+            train_xgt shifted inputs
+            """
             with tf.GradientTape() as tape:
                 losses_dict = self.loss_functions()
                 for loss_name, loss_func in losses_dict.items():
-                    if train_xt is None:
+                    if train_xgt is None:
                         losses_dict[loss_name] = loss_func(inputs=train_x, predictions=self.feedforward(train_x))
                     else:
-                        losses_dict[loss_name] = loss_func(inputs=train_xt, predictions=self.feedforward(train_x))
+                        losses_dict[loss_name] = loss_func(inputs=train_xgt, predictions=self.feedforward(train_x))
 
                 losses = -sum([*losses_dict.values()])
             gradients = tape.gradient(losses, get_trainables([*self.get_variables().values()]))
             self.optimizer.apply_gradients(zip(gradients, get_trainables([*self.get_variables().values()])))
             return losses
 
-        def evaluate_step(dataset_inputs):
+        def evaluate_step(train_x, train_xgt=None):
+            """
+            train_x input frames
+            train_xgt shifted inputs
+            """
             losses_dict = self.loss_functions()
             for loss_name, loss_func in losses_dict.items():
-                losses_dict[loss_name] = loss_func(inputs=dataset_inputs, predictions=self.feedforward(dataset_inputs))
+                if train_xgt is None:
+                    losses_dict[loss_name] = loss_func(inputs=train_x, predictions=self.feedforward(train_x))
+                else:
+                    losses_dict[loss_name] = loss_func(inputs=train_xgt, predictions=self.feedforward(train_x))
             return losses_dict
 
         self.optimizer = RAdamOptimizer(learning_rate)
@@ -134,10 +145,13 @@ class AE():
             for i, data_train in enumerate(train_dataset):
                 if instance_name=='episode':
                     train_x = tf.cast(data_train[0], dtype=tf.float32)/instance_scale
+                    train_xgt = tf.cast(data_train[1], dtype=tf.float32) / instance_scale
+                    total_loss = train_step(train_x, train_xgt)
+                    tr_losses = evaluate_step(train_x, train_xgt)
                 else:
                     train_x = tf.cast(data_train[instance_name], dtype=tf.float32) / instance_scale
-                total_loss = train_step(train_x)
-                tr_losses = evaluate_step(train_x)
+                    total_loss = train_step(train_x)
+                    tr_losses = evaluate_step(train_x)
                 for loss_name, loss_value in tr_losses.items():
                     try:
                         loss_tr[loss_name] += loss_value.numpy()
@@ -172,6 +186,54 @@ class AE():
                 tbar.update(i%100)
             val_end_time = time.time()
             loss_val['Elapsed'] = '{:06f}'.format(val_end_time - val_start_time)
+
+            '''
+            if ground_truth_enabled:
+                #ground truth eval
+                val_start_time = time.time()
+                gt_metrics_logger = defaultdict()
+                gt_metrics_logger['Epoch'] = epoch
+
+                log_message('Evaluating metrics ... ', logging.INFO)
+
+                from data.gt_load.datasets import load
+                from evaluation.unsupervised_metrics.compute_metrics import compute_unsupervised_metrics
+                from evaluation.supervised_metrics.compute_metrics import compute_supervised_metrics
+
+                eval_dataset = load(dataset_name=dataset_name, dataset_path=dataset_path)
+                def rep_func(x):
+                    z, mean, logvar = self.encode(x)
+                    return z
+                us_scores = compute_unsupervised_metrics(
+                    ground_truth_data=eval_dataset,
+                    representation_function=rep_func,
+                    random_state=np.random.RandomState(0),
+                    num_train=10000,
+                    batch_size=batch_size
+                )
+                s_scores = compute_supervised_metrics(
+                    ground_truth_data=eval_dataset,
+                    representation_function=rep_func,
+                    random_state=np.random.RandomState(0),
+                    num_train=10000,
+                    num_test=2000,
+                    continuous_factors=False,
+                    batch_size=batch_size
+                )
+
+                gt_metrics ={**s_scores, **us_scores}
+                for metric_name, metric_value in gt_metrics.items():
+                    try:
+                        gt_metrics_logger[metric_name] += metric_value.numpy()
+                    except:
+                        gt_metrics_logger[metric_name] = metric_value.numpy()
+                #gt_metrics_logger['Total'] = sum([*gt_metrics_logger.values()]).numpy()
+
+                log_message("==================================================================", logging.INFO)
+                file_Name = os.path.join(self.csv_log_dir, 'Metrics_' + dataset_name + self.model_name)
+                log(file_name=file_Name, message=dict(gt_metrics_logger), printed=True)
+                log_message("==================================================================", logging.INFO)
+            '''
 
             display.clear_output(wait=False)
             log_message("==================================================================", logging.INFO)

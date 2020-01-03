@@ -3,7 +3,7 @@ import tensorflow as tf
 from graphs.builder import make_models, load_models
 from stats.losses import reconstuction_loss
 from stats.pdfs import log_normal_pdf
-#from graphs.basics.AE_graph import decode
+
 
 def make_vae(model_name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params] #['inference',  'generative']
