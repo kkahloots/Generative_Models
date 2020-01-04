@@ -20,7 +20,6 @@ from utils.data_and_files.file_utils import create_if_not_exist, log, inspect_lo
 from utils.reporting.logging import log_message
 from utils.reporting.ploting import plot_and_save_generated
 
-
 class AE():
     def __init__(
             self,
