@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import dask.array as da
 from keras.preprocessing.image import Iterator, load_img, img_to_array, array_to_img
 from keras import backend as K
 import logging
@@ -88,7 +89,7 @@ class ImageIterator(Iterator):
         self.data_format = data_format
         self.image_shape = self.target_size
 
-        if (class_mode not in {'categorical', 'binary', 'sparse', 'episode', None}) and (not hasattr(class_mode, '__call__')):
+        if (class_mode not in {'categorical', 'binary', 'sparse', 'episode', 'episode_flat', None}) and (not hasattr(class_mode, '__call__')):
             raise ValueError('Invalid class_mode:', class_mode,
                              '; expected one of "categorical", '
                              '"binary", "sparse", "episode", or None.')
@@ -127,6 +128,7 @@ class ImageIterator(Iterator):
 
 
         grayscale = self.color_mode == 'grayscale'
+
 
         if self.class_mode == 'episode':
             batch_x = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
@@ -182,10 +184,63 @@ class ImageIterator(Iterator):
 
                 imgs = np.array(imgs)
                 batch_gt[i] = imgs
-            return batch_x, batch_gt
+            return da.from_array(batch_x), da.from_array(batch_gt)
             #return {'episode': batch_x, 'episode_shifted': batch_gt}
 
+        elif self.class_mode == 'episode_flat':
+            batch_x = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
+            batch_gt = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
 
+            def get_filename(path):
+                folder, file = path.split('\\')[-2:]
+                file_name = file.split('.')[0]
+                return folder, int(file_name)
+
+            sorted_filenames = sorted(self.filenames, key=lambda f: get_filename(f))
+
+            max_ix = int(get_filename(sorted_filenames[-1])[1])
+            last_ix = max_ix - (self.episode_len + self.episode_shift)
+
+            # build batch of image data
+            for i, j in enumerate(index_array):
+                if j > last_ix:
+                    j = j - last_ix
+
+                imgs = []
+                for ix in range(j, j + self.episode_len):
+                    imgs += [
+                        self.image_data_generator.standardize(
+                            img_to_array(
+                                load_img(
+                                    sorted_filenames[ix],
+                                    grayscale=grayscale,
+                                    target_size=self.target_size
+                                ),
+                                data_format=self.data_format
+                            )
+                        )
+                    ]
+                imgs = np.array(imgs)
+                batch_x[i] = imgs
+
+                imgs = []
+                for ix in range(j + self.episode_shift, j + self.episode_len + self.episode_shift):
+                    imgs += [
+                        self.image_data_generator.standardize(
+                            img_to_array(
+                                load_img(
+                                    sorted_filenames[ix],
+                                    grayscale=grayscale,
+                                    target_size=self.target_size
+                                ),
+                                data_format=self.data_format
+                            )
+                        )
+                    ]
+
+                imgs = np.array(imgs)
+                batch_gt[i] = imgs
+            return da.from_array(np.reshape(batch_x, (-1,)+self.image_shape )), da.from_array(np.reshape(batch_gt, (-1,)+self.image_shape))
         else:
             batch_x = np.zeros((len(index_array),) + self.image_shape, dtype=self.dtype)
             # build batch of image data

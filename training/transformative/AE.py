@@ -28,8 +28,14 @@ class AE(basicAE):
         self.encode_graph = encode
 
     def train_step(self, inputs, names):
-        X = inputs[names[0]]
-        Xt = inputs[names[1]]
+        try:
+            X = inputs[names[0]]
+        except:
+            X = inputs[0]
+        try:
+            Xt = inputs[names[1]]
+        except:
+            Xt = inputs[1]
         with tf.GradientTape() as tape:
             losses_dict = self.loss_functions()
             for loss_name, loss_func in losses_dict.items():
@@ -41,8 +47,14 @@ class AE(basicAE):
         return losses
 
     def evaluate_step(self, inputs, names):
-        X = inputs[names[0]]
-        Xt = inputs[names[1]]
+        try:
+            X = inputs[names[0]]
+        except:
+            X = inputs[0]
+        try:
+            Xt = inputs[names[1]]
+        except:
+            Xt = inputs[1]
         losses_dict = self.loss_functions()
         for loss_name, loss_func in losses_dict.items():
             losses_dict[loss_name] = loss_func(inputs=Xt, predictions=self.feedforward(X))

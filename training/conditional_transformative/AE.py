@@ -15,7 +15,7 @@ class AE(basicAE):
             variables_params,
             restore=None
     ):
-        AE.__init__(self,
+        basicAE.__init__(self,
             model_name=model_name,
             inputs_shape=inputs_shape,
             outputs_shape=outputs_shape,
@@ -35,9 +35,20 @@ class AE(basicAE):
         return {'x_logit': x_logit, 'latent': z}
 
     def train_step(self, inputs, names):
-        X = inputs[names[0]]
-        Xt = inputs[names[1]]
-        y = inputs[names[2]]
+        try:
+            X = inputs[names[0]]
+        except:
+            X = inputs[0]
+        try:
+            Xt = inputs[names[1]]
+        except:
+            Xt = inputs[1]
+
+        try:
+            y = inputs[names[2]]
+        except:
+            y = inputs[2]
+
         with tf.GradientTape() as tape:
             losses_dict = self.loss_functions()
             for loss_name, loss_func in losses_dict.items():
@@ -49,9 +60,20 @@ class AE(basicAE):
         return losses
 
     def evaluate_step(self, inputs, names):
-        X = inputs[names[0]]
-        Xt = inputs[names[1]]
-        y = inputs[names[2]]
+        try:
+            X = inputs[names[0]]
+        except:
+            X = inputs[0]
+        try:
+            Xt = inputs[names[1]]
+        except:
+            Xt = inputs[1]
+
+        try:
+            y = inputs[names[2]]
+        except:
+            y = inputs[2]
+
         losses_dict = self.loss_functions()
         for loss_name, loss_func in losses_dict.items():
             losses_dict[loss_name] = loss_func(inputs=Xt, predictions=self.feedforward([X,y]))

@@ -15,14 +15,15 @@ class AE(basicAE):
             restore=None
     ):
 
-        AE.__init__(self,
+        basicAE.__init__(self,
             model_name=model_name,
             inputs_shape=inputs_shape,
             outputs_shape=outputs_shape,
             latent_dim=latent_dim,
             variables_params=variables_params,
             restore=restore,
-            make_ae=make_ae)
+            make_ae=make_ae
+                    )
 
         self.encode_graph = encode
 

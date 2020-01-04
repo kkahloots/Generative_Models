@@ -72,7 +72,11 @@ class AE():
         return {'x_logit': x_logit, 'latent': z}
 
     def train_step(self, inputs,  names):
-        X = inputs[names[0]]
+        try:
+            X = inputs[names[0]]
+        except:
+            X = inputs[0]
+
         with tf.GradientTape() as tape:
             losses_dict = self.loss_functions()
             for loss_name, loss_func in losses_dict.items():
@@ -84,7 +88,10 @@ class AE():
         return losses
 
     def evaluate_step(self, inputs, names):
-        X = inputs[names[0]]
+        try:
+            X = inputs[names[0]]
+        except:
+            X = inputs[0]
         losses_dict = self.loss_functions()
         for loss_name, loss_func in losses_dict.items():
             losses_dict[loss_name] = loss_func(inputs=X, predictions=self.feedforward(X))
@@ -107,6 +114,8 @@ class AE():
         return outputs
 
     def cast_batch(self, batch):
+        if isinstance(batch, tuple):
+            batch = dict(zip(range(len(batch)), batch))
         return dict(zip([*batch], list(map(lambda v: tf.cast(v[1], dtype=tf.float32) , batch.items()))))
 
     def fit(self, train_dataset, test_dataset,
@@ -131,7 +140,8 @@ class AE():
         latent_shape = [50, self.latent_dim]
         if random_latent is None:
             random_latent = tf.random.normal(shape=latent_shape)
-        generated = self.generate_sample(model=self.get_varibale, inputs_shape=self.inputs_shape, latent_shape=latent_shape, eps=random_latent)
+        generated = self.generate_sample(model=self.get_varibale, inputs_shape=self.inputs_shape,
+                                         latent_shape=latent_shape, eps=random_latent)
         plot_and_save_generated(generated=generated, epoch=0, path=self.image_gen_dir, gray=gray_plot)
 
         self.optimizer = RAdamOptimizer(learning_rate)
@@ -149,8 +159,8 @@ class AE():
             log_message('Training ... ', logging.INFO)
             for i, data_train in enumerate(train_dataset):
                 data_train = self.cast_batch(data_train)
-                total_loss = self.train_step(input=data_train, names=instance_names)
-                tr_losses = self.evaluate_step(input=data_train, names=instance_names)
+                total_loss = self.train_step(inputs=data_train, names=instance_names)
+                tr_losses = self.evaluate_step(inputs=data_train, names=instance_names)
                 loss_tr = self.reduce_sum_dict(tr_losses, loss_tr)
                 epochs_pbar.set_description('Epochs Progress, Training Iterations {}'.format(i))
             tr_end_time = time.time()
@@ -165,7 +175,7 @@ class AE():
             tbar = tqdm(iterable=range(100), position=0, desc='Testing ...')
             for i, data_test in enumerate(test_dataset):
                 data_test = self.cast_batch(data_test)
-                val_losses = self.evaluate_step(input=data_test, names=instance_names)
+                val_losses = self.evaluate_step(inputs=data_test, names=instance_names)
                 loss_val = self.reduce_sum_dict(val_losses, loss_val)
 
                 montiored_loss = loss_val['Total']
@@ -184,8 +194,8 @@ class AE():
                 for i, data_test in enumerate(test_dataset):
                     data_test = self.cast_batch(data_test)
 
-                    inputs = {'X': data_test[instance_names[0]], 'y':self.feedforward(data_test[instance_names[0]])}
-                    met_computed= compute_metrics(inputs)
+                    data = {'X': data_test[instance_names[0]], 'y':self.feedforward(data_test[instance_names[0]])}
+                    met_computed = compute_metrics(data)
                     met_values = self.reduce_sum_dict(met_computed, met_values)
                     tbar.update(i % 100)
                 met_end_time = time.time()
@@ -198,7 +208,7 @@ class AE():
                 gt_values['Epoch'] = epoch
 
                 log_message('Evaluating ground truth data ... ', logging.INFO)
-                tbar = tqdm(iterable=range(100), position=0, desc='gt Evaluating ...')
+                #tbar = tqdm(iterable=range(100), position=0, desc='gt Evaluating ...')
 
                 def rep_func(x):
                     return self.feedforward(x)['latent']
