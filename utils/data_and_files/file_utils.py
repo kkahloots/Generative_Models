@@ -61,7 +61,7 @@ def create_if_not_exist(directories):
             log_message("Creating directory {},  error: {}".format(directory, err), logging.ERROR)
 
 def log(file_name, message, printed=True):
-    header = file_name.split('\\')[-1].split('_')[0]
+    header = file_name.split(os.path.sep)[-1].split('_')[0]
     fieldnames = [*message]
     if printed:
         msg = header

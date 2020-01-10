@@ -135,7 +135,7 @@ class ImageIterator(Iterator):
             batch_gt = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
 
             def get_filename(path):
-                folder, file = path.split('\\')[-2:]
+                folder, file = path.split(os.path.sep)[-2:]
                 file_name = file.split('.')[0]
                 return folder, int(file_name)
 
@@ -192,7 +192,7 @@ class ImageIterator(Iterator):
             batch_gt = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
 
             def get_filename(path):
-                folder, file = path.split('\\')[-2:]
+                folder, file = path.split(os.path.sep)[-2:]
                 file_name = file.split('.')[0]
                 return folder, int(file_name)
 
