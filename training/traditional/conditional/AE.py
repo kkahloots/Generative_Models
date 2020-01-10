@@ -1,11 +1,10 @@
-
 import tensorflow as tf
 
-from graphs.basics.VAE_graph import make_vae, encode
-from training.transformative.AE import AE
+from graphs.basics.AE_graph import make_ae, encode
+from training.traditional.autoencoders.AE import AE as basicAE
 
 
-class VAE(AE):
+class AE(basicAE):
     def __init__(
             self,
             model_name,
@@ -23,12 +22,15 @@ class VAE(AE):
             latent_dim=latent_dim,
             variables_params=variables_params,
             restore=restore,
-            make_ae=make_vae)
+            make_ae=make_ae)
 
         self.encode_graph = encode
 
     @tf.function
     def feedforward(self, inputs):
-        z, mean, logvar = self.encode(inputs)
-        x_logit = self.decode(z)
-        return {'x_logit': x_logit, 'latent': z, 'mean': mean, 'logvar':logvar}
+        X = inputs[0]
+        y = inputs[1]
+        z = self.encode(X)
+        x_logit = self.decode(tf.concat[z, y])
+        return {'x_logit': x_logit, 'latent': z}
+
