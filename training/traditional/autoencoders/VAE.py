@@ -2,7 +2,7 @@
 import tensorflow as tf
 
 from graphs.basics.VAE_graph import make_vae, encode
-from training.transformative.AE import AE
+from training.traditional.autoencoders.AE import AE
 
 
 class VAE(AE):

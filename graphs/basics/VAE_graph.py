@@ -4,7 +4,6 @@ from graphs.builder import make_models, load_models
 from stats.losses import reconstuction_loss
 from stats.pdfs import log_normal_pdf
 
-
 def make_vae(model_name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params] #['inference',  'generative']
     variables = make_variables(variables_params=variables_params, model_name=model_name, restore=restore)

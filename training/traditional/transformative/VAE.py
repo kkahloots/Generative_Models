@@ -1,7 +1,8 @@
+
 import tensorflow as tf
 
 from graphs.basics.VAE_graph import make_vae, encode
-from training.autoencoders.AE import AE
+from training.traditional.transformative.AE import AE
 
 
 class VAE(AE):
@@ -28,8 +29,6 @@ class VAE(AE):
 
     @tf.function
     def feedforward(self, inputs):
-        X = inputs[0]
-        y = inputs[1]
-        z, mean, logvar = self.encode(tf.concat[X, y])
+        z, mean, logvar = self.encode(inputs)
         x_logit = self.decode(z)
         return {'x_logit': x_logit, 'latent': z, 'mean': mean, 'logvar':logvar}

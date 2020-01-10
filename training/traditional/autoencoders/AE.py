@@ -140,9 +140,10 @@ class AE():
         latent_shape = [50, self.latent_dim]
         if random_latent is None:
             random_latent = tf.random.normal(shape=latent_shape)
-        generated = self.generate_sample(model=self.get_varibale, inputs_shape=self.inputs_shape,
-                                         latent_shape=latent_shape, eps=random_latent)
-        plot_and_save_generated(generated=generated, epoch=0, path=self.image_gen_dir, gray=gray_plot)
+
+        if generate_epoch:
+            generated = self.generate_sample(model=self.get_varibale, inputs_shape=self.inputs_shape, latent_shape=latent_shape, eps=random_latent)
+            plot_and_save_generated(generated=generated, epoch=0, path=self.image_gen_dir, gray=gray_plot)
 
         self.optimizer = RAdamOptimizer(learning_rate)
 
@@ -183,7 +184,7 @@ class AE():
             val_end_time = time.time()
             loss_val['Elapsed'] = '{:06f}'.format(val_end_time - val_start_time)
 
-            if epoch%metric_epoch == 0:
+            if metric_epoch is not None and epoch%metric_epoch == 0:
                 # testing dataset
                 met_start_time = time.time()
                 met_values = defaultdict()
@@ -256,7 +257,7 @@ class AE():
                 log(file_name=file_Name, message=dict(gt_metrics), printed=True)
                 log_message("==================================================================", logging.INFO)
 
-            if epoch%generate_epoch==0:
+            if generate_epoch is not None and epoch%generate_epoch==0:
                 generated = self.generate_sample(model=self.get_varibale, inputs_shape=self.inputs_shape, latent_shape=latent_shape, eps=random_latent)
             plot_and_save_generated(generated=generated, epoch=epoch, path=self.image_gen_dir,
                                     gray=gray_plot, save=epoch%generate_epoch==0)
