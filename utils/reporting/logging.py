@@ -2,9 +2,9 @@ import logging
 from colorlog import ColoredFormatter
 
 LOG_LEVEL = logging.DEBUG
-LOGFORMAT = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
+LOG_FORMAT = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 logging.root.setLevel(LOG_LEVEL)
-formatter = ColoredFormatter(LOGFORMAT)
+formatter = ColoredFormatter(LOG_FORMAT)
 stream = logging.StreamHandler()
 stream.setLevel(LOG_LEVEL)
 stream.setFormatter(formatter)
@@ -21,7 +21,7 @@ def log_message(message, log_level=logging.DEBUG):
     elif log_level==logging.CRITICAL:
         logger.critical(message)
     elif log_level==logging.WARN:
-        logger.warn(message)
+        logger.warning(message)
     elif log_level==logging.ERROR:
         logger.error(message)
     else:
