@@ -184,7 +184,7 @@ class AE():
             val_end_time = time.time()
             loss_val['Elapsed'] = '{:06f}'.format(val_end_time - val_start_time)
 
-            if metric_epoch is not None and epoch%metric_epoch == 0:
+            if epoch%metric_epoch == 0:
                 # testing dataset
                 met_start_time = time.time()
                 met_values = defaultdict()
@@ -195,14 +195,14 @@ class AE():
                 for i, data_test in enumerate(test_dataset):
                     data_test = self.cast_batch(data_test)
 
-                    data = {'X': data_test[instance_names[0]], 'y':self.feedforward(data_test[instance_names[0]])}
+                    data = {'X': data_test[instance_names[0]], 'y': self.feedforward(data_test[instance_names[0]])}
                     met_computed = compute_metrics(data)
                     met_values = self.reduce_sum_dict(met_computed, met_values)
                     tbar.update(i % 100)
                 met_end_time = time.time()
                 met_values['Elapsed'] = '{:06f}'.format(met_end_time - met_start_time)
 
-            if epoch % gt_epoch == 0 and gt_data is not None:
+            if (epoch % gt_epoch == 0) and (gt_data is not None):
                 # testing dataset
                 gt_start_time = time.time()
                 gt_values = defaultdict()

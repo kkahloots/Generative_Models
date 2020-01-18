@@ -2,9 +2,10 @@ import numpy as np
 import tensorflow as tf
 from evaluation.shared import log10
 
+
 def sharp_diff_metric(inputs):
-    gen_frames = inputs['y']
-    gt_frames  = inputs['X']
+    gen_frames = tf.sigmoid(inputs['y']['x_logit'])
+    gt_frames = inputs['X']
 
     """
     Computes the Sharpness Difference error between the generated images and the ground truth
@@ -19,6 +20,12 @@ def sharp_diff_metric(inputs):
     """
     shape = tf.shape(gen_frames)
     num_pixels = tf.compat.v1.to_float(shape[1] * shape[2] * shape[3])
+    if shape[3] == 1:
+        gen_frames = tf.image.grayscale_to_rgb(gen_frames)
+        gt_frames = tf.image.grayscale_to_rgb(gt_frames)
+
+        shape = tf.shape(gen_frames)
+        num_pixels = tf.compat.v1.to_float(shape[1] * shape[2] * shape[3])
 
     # gradient difference
     # create filters [-1, 1] and [[1],[-1]] for diffing to the left and down respectively.
@@ -42,6 +49,3 @@ def sharp_diff_metric(inputs):
 
     batch_errors = 10 * log10(1 / ((1 / num_pixels) * tf.reduce_sum(grad_diff, [1, 2, 3])))
     return tf.reduce_mean(batch_errors)
-
-
-
