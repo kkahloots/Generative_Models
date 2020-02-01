@@ -1,34 +1,34 @@
 import tensorflow as tf
 
-from graphs.basics.AE_graph import make_ae, encode
-from training.traditional.autoencoders.AE import AE as basicAE
+from graphs.basics.AE_graph import create_graph, encode_fn
+from training.traditional.autoencoders.autoencoder import autoencoder as basicAE
 
 
-class AE(basicAE):
+class autoencoder(basicAE):
     def __init__(
             self,
-            model_name,
+            name,
             inputs_shape,
             outputs_shape,
             latent_dim,
             variables_params,
-            restore=None
+            filepath=None
     ):
 
         basicAE.__init__(self,
-            model_name=model_name,
-            inputs_shape=inputs_shape,
-            outputs_shape=outputs_shape,
-            latent_dim=latent_dim,
-            variables_params=variables_params,
-            restore=restore,
-            make_ae=make_ae
-                    )
+                         name=name,
+                         inputs_shape=inputs_shape,
+                         outputs_shape=outputs_shape,
+                         latent_dim=latent_dim,
+                         variables_params=variables_params,
+                         filepath=filepath,
+                         model_fn=create_graph
+                         )
 
-        self.encode_graph = encode
+        self.encode_graph = encode_fn
 
     @tf.function
-    def feedforward(self, inputs):
+    def feedforwad(self, inputs):
         X = inputs[0]
         y = inputs[1]
         z = self.encode(X)

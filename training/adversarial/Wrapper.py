@@ -1,10 +1,10 @@
 from training.adversarial.AE import AE
 from training.traditional.autoencoders.VAE import VAE as TradAdapteeVAE
-from training.traditional.conditional.AE import AE as TradAdapteeCondAE
+from training.traditional.conditional.AE import autoencoder as TradAdapteeCondAE
 from training.traditional.conditional.VAE import VAE as TradAdapteeCondVAE
-from training.traditional.conditional_transformative.AE import AE as TradAdapteeCondTranAE
+from training.traditional.conditional_transformative.AE import autoencoder as TradAdapteeCondTranAE
 from training.traditional.conditional_transformative.VAE import VAE as TradAdapteeCondTranVAE
-from training.traditional.transformative.AE import AE as TradAdapteeTranAE
+from training.traditional.transformative.AE import autoencoder as TradAdapteeTranAE
 from training.traditional.transformative.VAE import VAE as TradAdapteeTranVAE
 
 def make_adver_VAE(

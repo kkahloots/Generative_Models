@@ -1,8 +1,8 @@
 import tensorflow as tf
 from evaluation.shared import log10
-def psnr_metric(inputs):
-    gen_frames = tf.sigmoid(inputs['y']['x_logit'])
-    gt_frames  = inputs['X']
+def psnr(inputs, x_logit):
+    gen_frames = tf.sigmoid(x_logit)
+    gt_frames  = inputs
     """
     Computes the Peak Signal to Noise Ratio error between the generated images and the ground
     truth images.

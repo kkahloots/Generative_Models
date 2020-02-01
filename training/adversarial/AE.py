@@ -3,9 +3,8 @@ from collections.abc import Iterable
 import tensorflow as tf
 
 from training.adversarial.losses import compute_discr_bce
-from training.traditional.autoencoders.AE import AE as AdapteeAE
+from training.traditional.autoencoders.autoencoder import autoencoder as AdapteeAE
 from utils.swe.codes import copy_func
-
 
 class AE():
     def __init__(
@@ -18,7 +17,6 @@ class AE():
             restore=None,
             AE=AdapteeAE
     ):
-
         self.adaptee_ae = AE(
                             model_name=model_name,
                             inputs_shape=inputs_shape,
@@ -30,18 +28,18 @@ class AE():
 
     def copy_adaptee(self):
         self.temp_get_variables = copy_func(self.adaptee_ae.get_variables)
-        self.temp_feedforward = copy_func(self.adaptee_ae.feedforward)
+        self.temp_feedforwad = copy_func(self.adaptee_ae.feedforwad)
         self.temp_loss_functions = copy_func(self.adaptee_ae.loss_functions)
 
     def switch_2tranditional(self):
         self.adaptee_ae.get_variables = self.temp_get_variables
-        self.adaptee_ae.feedforward = self.temp_feedforward
+        self.adaptee_ae.feedforwad = self.temp_feedforwad
         self.adaptee_ae.loss_functions = self.temp_loss_functions
 
     # discriminator special
     def switch_2discriminate(self):
         self.adaptee_ae.get_variables = self.get_discriminators
-        self.adaptee_ae.feedforward = self.discriminator_feedforward
+        self.adaptee_ae.feedforwad = self.discriminator_feedforwad
         self.adaptee_ae.loss_functions = self.get_discriminator_losses
 
     def get_discriminator_losses(self):
@@ -50,15 +48,15 @@ class AE():
     def get_discriminators(self):
         return dict(zip(['discriminator'], [self.adaptee_ae.discriminator]))
 
-    def discriminator_feedforward(self, inputs):
-        return {dkey: self.adver_feedforward(inputs)[dkey] for dkey in ['real_pred', 'fake_pred']}
+    def discriminator_feedforwad(self, inputs):
+        return {dkey: self.adver_feedforwad(inputs)[dkey] for dkey in ['real_pred', 'fake_pred']}
 
     # combined models special
     def adver_get_variables(self):
         return {**self.adaptee_ae.get_variables(), **self.get_discriminators()}
 
-    def adver_feedforward(self, inputs):
-        ae_output = self.adaptee_ae.feedforward(inputs)
+    def adver_feedforwad(self, inputs):
+        ae_output = self.adaptee_ae.feedforwad(inputs)
 
         # swapping the true by random
         fake_latent = ae_output['latent']
@@ -72,7 +70,7 @@ class AE():
 
     def switch_2adversarial(self):
         self.adaptee_ae.get_variables = self.adver_get_variables
-        self.adaptee_ae.feedforward = self.adver_feedforward
+        self.adaptee_ae.feedforwad = self.adver_feedforwad
         self.adaptee_ae.loss_functions = self.adver_loss_functions
 
 

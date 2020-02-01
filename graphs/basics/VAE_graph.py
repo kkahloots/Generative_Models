@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from graphs.builder import make_models, load_models
-from stats.losses import reconstuction_loss
+from stats.ae_losses import reconstuction_loss
 from stats.pdfs import log_normal_pdf
 
 def make_vae(model_name, variables_params, restore=None):

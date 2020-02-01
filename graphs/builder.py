@@ -66,18 +66,16 @@ def make_variable(inputs_shape, outputs_shape, layers=[], name=None):
         name = name,
         layers=
         [
-            tf.keras.layers.Input(shape=inputs_shape),
+            tf.keras.layers.Input(shape=inputs_shape, name=name+'_inputs', dtype='float32'),
         ]
         +
             layers
         +
         [
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(outputs_shape),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(rate=0.25),
             tf.keras.layers.ActivityRegularization(l1=1e-6, l2=1e-6),
-            tf.keras.layers.Activation(None, dtype='float32')
+            tf.keras.layers.Activation(None, name=name+'_outputs', dtype='float32')
         ]
 
     )
