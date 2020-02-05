@@ -1,20 +1,19 @@
 import numpy as np
 import logging
-from utils.reporting.logging import log_message
 from evaluation.unsupervised_metrics.correlation import gaussian_total_correlation, gaussian_wasserstein_correlation
 from evaluation.unsupervised_metrics.mutual_info import discrete_mutual_info, discrete_entropy
 from evaluation.shared import generate_batch_factor_code
 
 def compute_unsupervised_metrics(
         ground_truth_data,
-        representation_function,
+        representation_fn,
         random_state,
         num_train,
         batch_size=16):
     """Computes unsupervised scores based on covariance and mutual information.
        Args:
             ground_truth_data: GroundTruthData to be sampled from.
-            representation_function: Function that takes observations as input and
+            representation_fn: Function that takes observations as input and
               outputs a dim_representation sized representation for each observation.
             random_state: Numpy random state used for randomness.
             artifact_dir: Optional path to directory where artifacts can be saved.
@@ -24,10 +23,9 @@ def compute_unsupervised_metrics(
           Dictionary with scores.
     """
     scores = {}
-    log_message('Generating training set ...', logging.INFO)
     mus_train, _ = generate_batch_factor_code(
             ground_truth_data,
-            representation_function,
+            representation_fn,
             num_train,
             random_state,
             batch_size

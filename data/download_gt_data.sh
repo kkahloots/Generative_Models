@@ -14,63 +14,62 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-echo "Downloading small_norb."
-if [[ ! -d "small_norb" ]]; then
-  mkdir small_norb
-fi
-if [[ ! -e small_norb/"smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat" ]]; then
-  wget -O small_norb/smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat.gz
-  gunzip small_norb/smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat.gz
-fi
-if [[ ! -e small_norb/"smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat" ]]; then
-  wget -O small_norb/smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat.gz
-  gunzip small_norb/smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat.gz
-fi
-if [[ ! -e small_norb/"smallnorb-5x46789x9x18x6x2x96x96-training-info.mat" ]]; then
-  wget -O small_norb/smallnorb-5x46789x9x18x6x2x96x96-training-info.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x46789x9x18x6x2x96x96-training-info.mat.gz
-  gunzip small_norb/smallnorb-5x46789x9x18x6x2x96x96-training-info.mat.gz
-fi
-if [[ ! -e small_norb/"smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat" ]]; then
-  wget -O small_norb/smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat.gz
-  gunzip small_norb/smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat.gz
-fi
-if [[ ! -e small_norb/"smallnorb-5x46789x9x18x6x2x96x96-testing-cat.mat" ]]; then
-  wget -O small_norb/smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat.gz
-  gunzip small_norb/smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat.gz
-fi
-if [[ ! -e small_norb/"smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat" ]]; then
-  wget -O small_norb/smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat.gz
-  gunzip small_norb/smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat.gz
-fi
-echo "Downloading small_norb completed!"
+mkdir .gt_datasets
 
+echo "Downloading small_norb."
+cd .gt_datasets
+mkdir small_norb
+cd small_norb
+wget -O smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat.gz
+gunzip smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat.gz
+
+wget -O smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat.gz
+gunzip smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat.gz
+
+wget -O smallnorb-5x46789x9x18x6x2x96x96-training-info.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x46789x9x18x6x2x96x96-training-info.mat.gz
+gunzip smallnorb-5x46789x9x18x6x2x96x96-training-info.mat.gz
+
+wget -O smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat.gz
+gunzip smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat.gz
+
+wget -O smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat.gz
+gunzip smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat.gz
+
+wget -O smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat.gz https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat.gz
+gunzip smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat.gz
+
+echo "Downloading small_norb completed!"
+cd ..
 echo "Downloading cars dataset."
-if [[ ! -d "cars" ]]; then
-  wget -O nips2015-analogy-data.tar.gz http://www.scottreed.info/files/nips2015-analogy-data.tar.gz
-  tar xzf nips2015-analogy-data.tar.gz
-  rm nips2015-analogy-data.tar.gz
-  mv data/cars .
-  rm -r data
-fi
+
+mkdir cars
+cd cars
+wget -O nips2015-analogy-data.tar.gz http://www.scottreed.info/files/nips2015-analogy-data.tar.gz
+tar -xf nips2015-analogy-data.tar.gz
+rm nips2015-analogy-data.tar.gz
 echo "Downloading cars completed!"
 
+cd ..
 echo "Downloading dSprites dataset."
-if [[ ! -d "dsprites" ]]; then
-  mkdir dsprites
-  wget -O dsprites/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz https://github.com/deepmind/dsprites-dataset/raw/master/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz
-fi
+mkdir dsprites
+cd dsprites
+wget -O dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz https://github.com/deepmind/dsprites-dataset/raw/master/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz
+
 echo "Downloading dSprites completed!"
 
+cd ..
 echo "Downloading scream picture."
-if [[ ! -d "scream" ]]; then
-  mkdir scream
-  wget -O scream/scream.jpg https://upload.wikimedia.org/wikipedia/commons/f/f4/The_Scream.jpg
-fi
+mkdir scream
+cd scream
+wget -O scream.jpg https://upload.wikimedia.org/wikipedia/commons/f/f4/The_Scream.jpg
 echo "Downloading scream completed!"
 
 echo "Downloading mpi3d_toy dataset."
-if [[ ! -d "mpi3d_toy" ]]; then
-  mkdir mpi3d_toy
-  wget -O mpi3d_toy/mpi3d_toy.npz https://storage.googleapis.com/disentanglement_dataset/data_npz/sim_toy_64x_ordered_without_heldout_factors.npz
-fi
+cd ..
+mkdir mpi3d_toy
+cd mpi3d_toy
+wget -O mpi3d_toy.npz https://storage.googleapis.com/disentanglement_dataset/data_npz/sim_toy_64x_ordered_without_heldout_factors.npz
+
 echo "Downloading mpi3d_toy completed!"
+cd ..
+cd ..
