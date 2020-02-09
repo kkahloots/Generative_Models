@@ -17,9 +17,8 @@ def create_graph(name, variables_params, restore=None):
 def create_losses():
     return dict(zip(['x_logits'], [bce]))
 
-#@tf.function
-def bce(inputs, x_logit):
-    reconstruction_loss = reconstuction_loss(true_x=inputs, pred_x=x_logit)
+def bce(inputs, x_logits):
+    reconstruction_loss = reconstuction_loss(true_x=inputs, pred_x=x_logits)
     Px_xreconst = tf.reduce_mean(-reconstruction_loss)
     return -Px_xreconst
 
@@ -31,9 +30,13 @@ def make_variables(variables_params, model_name, restore=None):
         variables = load_models(restore, [model_name + '_' + var for var in variables_names])
     return variables
 
-def encode_fn(model, inputs):
+def encode_fn(**kwargs):
+    model = kwargs['model']
+    inputs = kwargs['inputs']
     z = model('inference', [inputs])
-    return z
+    return {
+        'x_latent': z
+    }
 
 def decode_fn(model, latent, inputs_shape, apply_sigmoid=False):
     x_logits = model('generative', [latent])
@@ -48,4 +51,3 @@ def generate_sample(model, inputs_shape, latent_shape, eps=None):
         eps = tf.random.normal(shape=latent_shape)
     generated = decode_fn(model=model, latent=eps, inputs_shape=inputs_shape, apply_sigmoid=True)
     return generated
-

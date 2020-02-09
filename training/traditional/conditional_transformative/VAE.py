@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from graphs.basics.VAE_graph import make_vae, encode
+from graphs.basics.VAE_graph import create_graph, encode_fn
 from training.traditional.autoencoders.autoencoder import autoencoder
 
 
@@ -22,9 +22,9 @@ class VAE(autoencoder):
                              latent_dim=latent_dim,
                              variables_params=variables_params,
                              filepath=filepath,
-                             model_fn=make_vae)
+                             model_fn=create_graph)
 
-        self.encode_graph = encode
+        self.encode_graph = encode_fn
 
     @tf.function
     def feedforwad(self, inputs):

@@ -3,8 +3,8 @@ import tensorflow as tf
 from evaluation.shared import log10
 
 @tf.function
-def sharp_diff(inputs, x_logit):
-    gen_frames = tf.sigmoid(x_logit)
+def sharp_diff(inputs, x_logits):
+    gen_frames = tf.sigmoid(x_logits)
     gt_frames = inputs
 
     """

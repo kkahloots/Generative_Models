@@ -4,4 +4,4 @@ from evaluation.quantitive_metrics.sharp_diff import sharp_diff
 
 
 def create_metrics():
-    return [psnr, ssmi, sharp_diff]
+    return {'x_logits': [psnr, ssmi, sharp_diff]}

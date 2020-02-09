@@ -33,5 +33,5 @@ class autoencoder(basicAE):
         y = inputs[1]
         z = self.encode(X)
         x_logit = self.decode(tf.concat[z, y])
-        return {'x_logit': x_logit, 'latent': z}
+        return {'x_logit': x_logit, 'x_latent': z}
 
