@@ -56,15 +56,15 @@ class VAE(autoencoder):
     def outputs_renaming_fn(self):
         ## rename the outputs
         for i, _output in enumerate(self.output_names):
-            if _output == 'tf_op_layer_log_pdf':
+            if 'tf_op_layer_log_pdf' in _output:
                 self.output_names[i] = 'x_log_pdf'
-            elif _output == 'tf_op_layer_x_latent':
+            elif 'tf_op_layer_x_latent' in _output:
                 self.output_names[i] = 'x_latent'
-            elif _output == 'tf_op_layer_x_logits':
+            elif 'tf_op_layer_x_logits' in _output:
                 self.output_names[i] = 'x_logits'
-            elif _output == 'encoder_logvar':
+            elif 'encoder_logvar'in _output:
                 self.output_names[i] = 'x_logvar'
-            elif _output == 'encoder_mean':
+            elif 'encoder_mean' in _output:
                 self.output_names[i] = 'x_mean'
             else:
                 pass
