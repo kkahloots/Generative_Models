@@ -11,6 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 .idea
+# git rm -r --cached .idea  in your terminal. It disables the change tracking.
 dist/
 downloads/
 eggs/
@@ -27,7 +28,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-data/.gt_datasets
+data/.gt_datasets/*
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
