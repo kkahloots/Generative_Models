@@ -79,18 +79,18 @@ def make_variable(inputs_shape, outputs_shape, layers=[], name=None):
         ]
 
     )
-    return variable
+    return tf.keras.Model(name=variable.name, inputs=variable.inputs, outputs=variable.outputs)
 
 def save_models(file_name, variables):
     for name, variable in variables.items():
-        variable.save(file_name + '_' + name + '.h5', overwrite=True)
+        variable.save(file_name + '_' + name + '.hdf5', overwrite=True)
 
 def load_models(file_name, variables_names):
     log_message('Restore old models ...', logging.DEBUG)
     vars = []
     for name in variables_names:
-        var = os.path.join(file_name, name+'.h5')
-        variable = load_model(var)
+        var = os.path.join(file_name, name+'.hdf5')
+        variable = load_model(var, compile=False)
         vars += [variable]
         log_message(variable.summary(), logging.WARN)
     return vars

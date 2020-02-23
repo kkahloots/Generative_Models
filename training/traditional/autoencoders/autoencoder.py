@@ -65,8 +65,8 @@ class autoencoder(tf.keras.Model):
             metrics=create_metrics(),
             **kwargs
     ):
-
-        tf.keras.Model.compile(self, optimizer=optimizer, loss=loss, metrics=metrics, **kwargs)
+        self._metrics = metrics
+        tf.keras.Model.compile(self, optimizer=optimizer, loss=loss, metrics=self._metrics, **kwargs)
         print(self.summary())
 
     def fit_generator(
