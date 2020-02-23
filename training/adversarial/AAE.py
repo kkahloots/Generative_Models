@@ -244,7 +244,7 @@ class AAE(autoencoder):
         self.latent_real_discriminator.compile(
             optimizer=self.optimizer,
             loss=create_adversarial_real_losses(),
-            metrics=self._metrics
+            metrics=self.__metrics
         )
 
         print(self.latent_real_discriminator.summary())
