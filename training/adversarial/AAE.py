@@ -1,9 +1,7 @@
-from collections.abc import Iterable
 from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
 import tensorflow as tf
-import numpy as np
 
-from stats.adver_losses import create_adversarial_losses
+from stats.adver_losses import create_adversarial_real_losses, create_adversarial_fake_losses, create_adversarial_losses
 from training.traditional.autoencoders.autoencoder import autoencoder
 from utils.swe.codes import copy_fn
 
@@ -19,30 +17,42 @@ class AAE(autoencoder):
             **kwargs
         )
 
-    # def get_varibale(self, var_name, param):
-    #     if var_name=='latent_discriminator':
-    #         return self.get_variables()[var_name].predict(*param)
-    #     return self.get_variables()[var_name](*param)
-
     def get_discriminators(self):
-        return dict(zip(['latent_discriminator'], [self.latent_discriminator.call]))
+        return {
+            'latent_real_discriminator': self.latent_real_discriminator,
+            'latent_fake_discriminator': self.latent_fake_discriminator
+        }
 
-    def latent_discriminator_cast_batch(self, batch):
+
+    def latent_real_discriminator_cast_batch(self, batch):
         x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
         en = autoencoder.encode(self, inputs={'inputs': x})
-        return {'generative_inputs': en['x_latent']} ,\
+        return {'generative_inputs': en['x_latent'],
+                'latent_real_discriminator_inputs': en['x_latent']
+                } ,\
                {
-                   'latent_real_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true'),
-                   'latent_fake_outputs': tf.zeros(shape=[self.batch_size, 1], name='fake_true')
+                   'latent_real_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true')
+               }
+
+    def latent_fake_discriminator_cast_batch(self, batch):
+        x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
+        en = autoencoder.encode(self, inputs={'inputs': x})
+        return {'generative_inputs': en['x_latent'],
+                'latent_fake_discriminator_inputs': en['x_latent']
+                } ,\
+               {
+                   'latent_fake_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='fake_true')
                }
 
     def together_cast_batch(self, batch):
         x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
         en = autoencoder.encode(self, inputs={'inputs': x})
-        return {'generative_inputs': en['x_latent']} ,\
+        return {   'inference_inputs': x,
+                   'generative_inputs': en['x_latent']} ,\
                {
-                   'latent_real_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true'),
-                   'latent_fake_outputs': tf.zeros(shape=[self.batch_size, 1], name='fake_true')
+                   'x_logits': x,
+                   'latent_real_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true'),
+                   'latent_fake_discriminator_outputs': tf.zeros(shape=[self.batch_size, 1], name='fake_true')
                }
 
 
@@ -93,16 +103,25 @@ class AAE(autoencoder):
                         if hasattr(layer, 'activation'):
                             layer.activation = tf.keras.activations.elu
 
-            discriminator = tf.keras.models.clone_model(self.get_variables()['generative'])
-            discriminator.add(tf.keras.layers.Flatten())
-            self.latent_discriminator = tf.keras.Model(
-                inputs=discriminator.inputs,
-                outputs={
-                    'latent_real_outputs': tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_real_outputs')(discriminator.output),
-                    'latent_fake_outputs': tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_fake_outputs')(discriminator.output)
-                }, name='latent_discriminator'
+            temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
+            temp_layers.append(tf.keras.layers.Flatten())
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_real_discriminator_outputs'))
+            temp_layers = tf.keras.Sequential(temp_layers)
+            self.latent_real_discriminator = tf.keras.Model(
+                name='latent_real_discriminator',
+                inputs=temp_layers.inputs,
+                outputs=temp_layers.outputs
             )
-            self.latent_discriminator.input._name = 'latent_discriminator_inputs'
+
+            temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
+            temp_layers.append(tf.keras.layers.Flatten())
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_fake_discriminator_outputs'))
+            temp_layers = tf.keras.Sequential(temp_layers)
+            self.latent_fake_discriminator = tf.keras.Model(
+                name='latent_fake_discriminator',
+                inputs=temp_layers.inputs,
+                outputs=temp_layers.outputs
+            )
 
         # 2- create a latent discriminator
         if self.strategy:
@@ -122,8 +141,25 @@ class AAE(autoencoder):
             self.latent_discriminator_compile()
 
         # 5- train the latent discriminator
-        self.latent_discriminator.fit_generator(
-            generator=generator.map(self.latent_discriminator_cast_batch),
+        self.latent_real_discriminator.fit_generator(
+            generator=generator.map(self.latent_real_discriminator_cast_batch),
+            steps_per_epoch=steps_per_epoch,
+            epochs=epochs,
+            verbose=verbose,
+            callbacks=None,
+            validation_data=validation_data,
+            validation_steps=validation_steps,
+            validation_freq=validation_freq,
+            class_weight=class_weight,
+            max_queue_size=max_queue_size,
+            workers=workers,
+            use_multiprocessing=use_multiprocessing,
+            shuffle=shuffle,
+            initial_epoch=initial_epoch
+        )
+
+        self.latent_fake_discriminator.fit_generator(
+            generator=generator.map(self.latent_fake_discriminator_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
@@ -146,6 +182,25 @@ class AAE(autoencoder):
         else:
             self.connect_together()
 
+        # 7- training together
+        self.latent_AA.fit_generator(
+            generator=generator.map(self.together_cast_batch),
+            steps_per_epoch=steps_per_epoch,
+            epochs=epochs,
+            verbose=verbose,
+            callbacks=None,
+            validation_data=validation_data,
+            validation_steps=validation_steps,
+            validation_freq=validation_freq,
+            class_weight=class_weight,
+            max_queue_size=max_queue_size,
+            workers=workers,
+            use_multiprocessing=use_multiprocessing,
+            shuffle=shuffle,
+            initial_epoch=initial_epoch
+        )
+
+
     def connect_together(self):
         self.get_variables = self.adver_get_variables
         self.encode_fn = latent_discriminate_encode_fn
@@ -154,156 +209,160 @@ class AAE(autoencoder):
         }
         encoded = self.encode(inputs=_inputs)
         x_logits = self.decode(encoded['x_latent'])
-        #en_outputs = 'real_pred': real_pred {k: v.outputs[0] for k, v in encoded.items()}
+
         _outputs = {
             'x_logits': x_logits,
-            'real_pred': encoded['real_pred']
+            'real_pred': encoded['real_pred'],
+            'fake_pred': encoded['fake_pred']
         }
         self.latent_AA = tf.keras.Model(
             name='latent_AA',
-            inputs=_inputs,
+            inputs= _inputs,
             outputs=_outputs
         )
-        print(self.latent_AA.summary())
 
-        tf.keras.Model.__init__(
-            self,
-            name=self.name,
-            inputs=_inputs,
-            outputs=_outputs
+        for i, _output in enumerate(self.latent_AA.output_names):
+            if 'tf_op_layer_x_logits' in _output :
+                self.latent_AA.output_names[i] = 'x_logits'
+            elif 'latent_fake_discriminator' in _output :
+                self.latent_AA.output_names[i] = 'latent_fake_discriminator_outputs'
+            elif 'latent_real_discriminator' in _output :
+                self.latent_AA.output_names[i] = 'latent_real_discriminator_outputs'
+            else:
+                pass
+
+        self.latent_AA.compile(
+            optimizer=self.optimizer,
+            loss=create_adversarial_losses(),
+            metrics=self.metrics
         )
+
+        print(self.latent_AA.summary())
 
 
     def latent_discriminator_compile(self, **kwargs):
-        #self.get_variables = self.get_discriminators
-        #self.encode_fn = latent_discriminate_encode_fn
-        self.latent_discriminator.compile(
+        self.latent_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_adversarial_losses(),
+            loss=create_adversarial_real_losses(),
+            metrics=self.__metrics
+        )
+
+        print(self.latent_real_discriminator.summary())
+
+        self.latent_fake_discriminator.compile(
+            optimizer=self.optimizer,
+            loss=create_adversarial_fake_losses(),
             metrics=None
         )
-        print(self.latent_discriminator.summary())
+
+        print(self.latent_fake_discriminator.summary())
 
     # combined models special
     def adver_get_variables(self):
         return {**self.ae_get_variables(), **self.get_discriminators()}
 
-        #self.adaptee_ae.loss_functions = self.get_discriminator_losses
-
-    # def copy_adaptee(self):
-    #     self.temp_get_variables = copy_fn(self.adaptee_ae.get_variables)
-    #     self.temp_feedforwad = copy_fn(self.adaptee_ae.feedforwad)
-    #     self.temp_loss_functions = copy_fn(self.adaptee_ae.loss_functions)
+    # def discriminator_feedforwad(self, inputs):
+    #     return {dkey: self.adver_feedforwad(inputs)[dkey] for dkey in ['real_pred', 'fake_pred']}
     #
-    # def switch_2tranditional(self):
-    #     self.adaptee_ae.get_variables = self.temp_get_variables
-    #     self.adaptee_ae.feedforwad = self.temp_feedforwad
-    #     self.adaptee_ae.loss_functions = self.temp_loss_functions
+    # def adver_feedforwad(self, inputs):
+    #     ae_output = self.adaptee_ae.feedforwad(inputs)
     #
-    # discriminator special
-
-    def discriminator_feedforwad(self, inputs):
-        return {dkey: self.adver_feedforwad(inputs)[dkey] for dkey in ['real_pred', 'fake_pred']}
-
-    def adver_feedforwad(self, inputs):
-        ae_output = self.adaptee_ae.feedforwad(inputs)
-
-        # swapping the true by random
-        fake_latent = ae_output['latent']
-        real_latent = tf.random.normal(shape=fake_latent.shape)
-        real_pred = self.adaptee_ae.discriminator(real_latent)
-        fake_pred = self.adaptee_ae.discriminator(fake_latent)
-        return {**ae_output, 'real_pred': real_pred, 'fake_pred': fake_pred}
+    #     # swapping the true by random
+    #     fake_latent = ae_output['latent']
+    #     real_latent = tf.random.normal(shape=fake_latent.shape)
+    #     real_pred = self.adaptee_ae.discriminator(real_latent)
+    #     fake_pred = self.adaptee_ae.discriminator(fake_latent)
+    #     return {**ae_output, 'real_pred': real_pred, 'fake_pred': fake_pred}
 
     def adver_loss_functions(self):
         return {**self.adaptee_ae.loss_functions(), **self.get_discriminator_losses()}
 
-    def switch_2adversarial(self):
-        self.adaptee_ae.get_variables = self.adver_get_variables
-        self.adaptee_ae.feedforwad = self.adver_feedforwad
-        self.adaptee_ae.loss_functions = self.adver_loss_functions
+    # def switch_2adversarial(self):
+    #     self.adaptee_ae.get_variables = self.adver_get_variables
+    #     self.adaptee_ae.feedforwad = self.adver_feedforwad
+    #     self.adaptee_ae.loss_functions = self.adver_loss_functions
 
 
-    def fit1(self, train_dataset, test_dataset,
-            instance_names=['image'],
-            epochs=10,
-            learning_rate=1e-3,
-            random_latent=None,
-            recoding_dir='./recoding',
-            gray_plot=True,
-            generate_epoch=5,
-            save_epoch=5,
-            metric_epoch=10,
-            gt_epoch=10,
-            gt_data=None
-            ):
-        assert isinstance(train_dataset, Iterable), 'dataset must be iterable'
-        assert isinstance(test_dataset, Iterable), 'dataset must be iterable'
-
-        # 1- train the traditional basicAE
-        self.adaptee_ae.fit(
-            train_dataset=train_dataset,
-            test_dataset=test_dataset,
-            instance_names=instance_names,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            random_latent=random_latent,
-            recoding_dir=recoding_dir,
-            gray_plot=gray_plot,
-            generate_epoch=None,
-            save_epoch=save_epoch,
-            metric_epoch=None,
-            gt_epoch=None,
-            gt_data=None)
-
-        # 2- copy traditional
-        self.copy_adaptee()
-
-        # 3- create a discriminator
-        for var in self.adaptee_ae.get_variables():
-            for layer in var.layers:
-                if not isinstance(layer, tf.keras.layers.Activation):
-                    if hasattr(layer, 'activation'):
-                        layer.activation = tf.keras.activations.elu
-
-        self.adaptee_ae.discriminator = tf.keras.models.clone_model(self.adaptee_ae.get_variables()['generative'])
-        self.adaptee_ae.discriminator._name = 'discriminator'
-        self.adaptee_ae.discriminator.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
-        print(self.adaptee_ae.discriminator.summary())
-
-        # 4- switch to discriminate
-        self.latent_discriminator_compile()
-
-        # 5- train the discriminator
-        self.adaptee_ae.fit(
-            train_dataset=train_dataset,
-            test_dataset=test_dataset,
-            instance_names=instance_names,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            random_latent=random_latent,
-            recoding_dir=recoding_dir,
-            gray_plot=gray_plot,
-            generate_epoch=None,
-            save_epoch=save_epoch,
-            metric_epoch=None,
-            gt_epoch=None,
-            gt_data=None)
-
-        # 6- switch to adversarial
-        self.switch_2adversarial()
-        self.adaptee_ae.fit(
-            train_dataset=train_dataset,
-            test_dataset=test_dataset,
-            instance_names=instance_names,
-            epochs=epochs,
-            learning_rate=learning_rate,
-            random_latent=random_latent,
-            recoding_dir=recoding_dir,
-            gray_plot=gray_plot,
-            generate_epoch=generate_epoch,
-            save_epoch=save_epoch,
-            metric_epoch=metric_epoch,
-            gt_epoch=gt_epoch,
-            gt_data=gt_data)
-
+    # def fit1(self, train_dataset, test_dataset,
+    #         instance_names=['image'],
+    #         epochs=10,
+    #         learning_rate=1e-3,
+    #         random_latent=None,
+    #         recoding_dir='./recoding',
+    #         gray_plot=True,
+    #         generate_epoch=5,
+    #         save_epoch=5,
+    #         metric_epoch=10,
+    #         gt_epoch=10,
+    #         gt_data=None
+    #         ):
+    #     assert isinstance(train_dataset, Iterable), 'dataset must be iterable'
+    #     assert isinstance(test_dataset, Iterable), 'dataset must be iterable'
+    #
+    #     # 1- train the traditional basicAE
+    #     self.adaptee_ae.fit(
+    #         train_dataset=train_dataset,
+    #         test_dataset=test_dataset,
+    #         instance_names=instance_names,
+    #         epochs=epochs,
+    #         learning_rate=learning_rate,
+    #         random_latent=random_latent,
+    #         recoding_dir=recoding_dir,
+    #         gray_plot=gray_plot,
+    #         generate_epoch=None,
+    #         save_epoch=save_epoch,
+    #         metric_epoch=None,
+    #         gt_epoch=None,
+    #         gt_data=None)
+    #
+    #     # 2- copy traditional
+    #     self.copy_adaptee()
+    #
+    #     # 3- create a discriminator
+    #     for var in self.adaptee_ae.get_variables():
+    #         for layer in var.layers:
+    #             if not isinstance(layer, tf.keras.layers.Activation):
+    #                 if hasattr(layer, 'activation'):
+    #                     layer.activation = tf.keras.activations.elu
+    #
+    #     self.adaptee_ae.discriminator = tf.keras.models.clone_model(self.adaptee_ae.get_variables()['generative'])
+    #     self.adaptee_ae.discriminator._name = 'discriminator'
+    #     self.adaptee_ae.discriminator.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
+    #     print(self.adaptee_ae.discriminator.summary())
+    #
+    #     # 4- switch to discriminate
+    #     self.latent_discriminator_compile()
+    #
+    #     # 5- train the discriminator
+    #     self.adaptee_ae.fit(
+    #         train_dataset=train_dataset,
+    #         test_dataset=test_dataset,
+    #         instance_names=instance_names,
+    #         epochs=epochs,
+    #         learning_rate=learning_rate,
+    #         random_latent=random_latent,
+    #         recoding_dir=recoding_dir,
+    #         gray_plot=gray_plot,
+    #         generate_epoch=None,
+    #         save_epoch=save_epoch,
+    #         metric_epoch=None,
+    #         gt_epoch=None,
+    #         gt_data=None)
+    #
+    #     # 6- switch to adversarial
+    #     self.switch_2adversarial()
+    #     self.adaptee_ae.fit(
+    #         train_dataset=train_dataset,
+    #         test_dataset=test_dataset,
+    #         instance_names=instance_names,
+    #         epochs=epochs,
+    #         learning_rate=learning_rate,
+    #         random_latent=random_latent,
+    #         recoding_dir=recoding_dir,
+    #         gray_plot=gray_plot,
+    #         generate_epoch=generate_epoch,
+    #         save_epoch=save_epoch,
+    #         metric_epoch=metric_epoch,
+    #         gt_epoch=gt_epoch,
+    #         gt_data=gt_data)
+    #
