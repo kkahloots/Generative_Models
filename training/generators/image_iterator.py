@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import dask.array as da
+import tensorflow as tf
 from keras.preprocessing.image import Iterator, load_img, img_to_array, array_to_img
 from keras import backend as K
 import logging
@@ -64,6 +64,7 @@ class ImageIterator(Iterator):
 
         classes = list(image_lists.keys())
         self.category = category
+        self.batch_size = batch_size
         self.num_class = len(classes)
         self.image_lists = image_lists
         self.image_dir = image_dir
@@ -112,7 +113,7 @@ class ImageIterator(Iterator):
                 self.filenames.append(img_path)
                 i += 1
         log_message("Found {} {} files".format(len(self.filenames), category), logging.INFO)
-        Iterator.__init__(self, self.samples, batch_size, shuffle, seed)
+        Iterator.__init__(self, self.samples, self.batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         """For python 2.x.
@@ -126,10 +127,11 @@ class ImageIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
 
+        if len(index_array) < self.batch_size:
+            diff = self.batch_size//len(index_array) + 1
+            index_array = np.repeat(index_array, diff, axis=0)[:self.batch_size]
 
         grayscale = self.color_mode == 'grayscale'
-
-
         if self.class_mode == 'episode':
             batch_x = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
             batch_gt = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
@@ -184,8 +186,7 @@ class ImageIterator(Iterator):
 
                 imgs = np.array(imgs)
                 batch_gt[i] = imgs
-            return da.from_array(batch_x), da.from_array(batch_gt)
-            #return {'episode': batch_x, 'episode_shifted': batch_gt}
+            return batch_x, batch_gt
 
         elif self.class_mode == 'episode_flat':
             batch_x = np.zeros((len(index_array), self.episode_len) + self.image_shape, dtype=self.dtype)
@@ -240,7 +241,7 @@ class ImageIterator(Iterator):
 
                 imgs = np.array(imgs)
                 batch_gt[i] = imgs
-            return da.from_array(np.reshape(batch_x, (-1,)+self.image_shape )), da.from_array(np.reshape(batch_gt, (-1,)+self.image_shape))
+            return np.reshape(batch_x, (-1,)+self.image_shape ), np.reshape(batch_gt, (-1,)+self.image_shape)
         else:
             batch_x = np.zeros((len(index_array),) + self.image_shape, dtype=self.dtype)
             # build batch of image data
