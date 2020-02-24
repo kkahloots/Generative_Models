@@ -18,7 +18,7 @@ def sharp_diff(inputs, x_logits):
 
     @return: A scalar tensor. The Sharpness Difference error over each frame in the batch.
     """
-    shape = tf.shape(gen_frames)
+    shape = gen_frames.shape
     num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
     if shape[3] == 1:
         gen_frames = tf.image.grayscale_to_rgb(gen_frames)

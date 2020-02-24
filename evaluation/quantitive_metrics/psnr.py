@@ -16,7 +16,7 @@ def psnr(inputs, x_logits):
              batch.
     """
     shape = tf.shape(gen_frames)
-    num_pixels = tf.compat.v1.to_float(shape[1] * shape[2] * shape[3])
+    num_pixels = tf.cast(shape[1] * shape[2] * shape[3], dtype='float')
     square_diff = tf.square(gt_frames - gen_frames)
 
     batch_errors = 10 * log10(1 / ((1 / num_pixels) * tf.reduce_sum(square_diff, [1, 2, 3])))

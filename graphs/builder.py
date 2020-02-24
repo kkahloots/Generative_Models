@@ -5,7 +5,6 @@ import os
 import logging
 from utils.reporting.logging import log_message
 from utils.swe.codes import properties, Layer_CD, Activate_CD, Messages_CD, Sampling_CD
-from collections.abc import Iterable
 
 def create_layer(layer_cd, lay_dim, kernel_shape=None, addBatchNorm=True, addDropout=True, activate=None):
     assert layer_cd in properties(Layer_CD), Messages_CD.USV.format(layer_cd, 'Layers', properties(Layer_CD))
@@ -59,8 +58,6 @@ def create_sequence(lay_shapes, isConv=True, kernel_shape=3, sampling_rate=2, ad
     return x
 
 def make_variable(inputs_shape, outputs_shape, layers=[], name=None):
-    if isinstance(outputs_shape, Iterable):
-        outputs_shape = np.prod(outputs_shape)
     variable = \
         tf.keras.Sequential(
         name = name,
