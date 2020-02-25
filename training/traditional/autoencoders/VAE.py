@@ -78,7 +78,10 @@ class VAE(autoencoder):
 
 
     def cast_batch(self, batch):
-        x = tf.cast(batch['image'], dtype=tf.float32)
+        if self.input_kw:
+            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
+        else:
+            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
         return {
                    'encoder_logvar_inputs': x,
                    'encoder_mean_inputs': x
