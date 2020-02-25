@@ -16,7 +16,7 @@ def plot_and_save_generated(generated, epoch, path, gray=True, save=True):
         if gray:
             plt.imshow(generated[i, :, :, 0], cmap='gray')
         else:
-            plt.imshow(generated[i, :, :, 0])
+            plt.imshow(generated[i])
         plt.axis('off')
 
     if save:

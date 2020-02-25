@@ -56,9 +56,10 @@ class AAE(autoencoder):
                }
 
 
-    def fit_generator(
+    def fit(
             self,
-            generator,
+            x,
+            y=None,
             input_kw='image',
             input_scale=1.0,
             steps_per_epoch=None,
@@ -76,9 +77,9 @@ class AAE(autoencoder):
             initial_epoch=0
     ):
         # 1- train the traditional basicAE
-        autoencoder.fit_generator(
+        autoencoder.fit(
             self,
-            generator=generator,
+            x=x,
             input_kw=input_kw,
             input_scale=input_scale,
             steps_per_epoch=steps_per_epoch,
@@ -141,8 +142,8 @@ class AAE(autoencoder):
             self.latent_discriminator_compile()
 
         # 5- train the latent discriminator
-        self.latent_real_discriminator.fit_generator(
-            generator=generator.map(self.latent_real_discriminator_cast_batch),
+        self.latent_real_discriminator.fit(
+            x=x.map(self.latent_real_discriminator_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
@@ -158,8 +159,8 @@ class AAE(autoencoder):
             initial_epoch=initial_epoch
         )
 
-        self.latent_fake_discriminator.fit_generator(
-            generator=generator.map(self.latent_fake_discriminator_cast_batch),
+        self.latent_fake_discriminator.fit(
+            x=x.map(self.latent_fake_discriminator_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
@@ -183,8 +184,8 @@ class AAE(autoencoder):
             self.connect_together()
 
         # 7- training together
-        self.latent_AA.fit_generator(
-            generator=generator.map(self.together_cast_batch),
+        self.latent_AA.fit(
+            x=x.map(self.together_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,

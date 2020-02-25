@@ -69,9 +69,12 @@ class autoencoder(tf.keras.Model):
         tf.keras.Model.compile(self, optimizer=optimizer, loss=loss, metrics=self.__metrics, **kwargs)
         print(self.summary())
 
-    def fit_generator(
+
+
+    def fit(
             self,
-            generator,
+            x,
+            y=None,
             input_kw='image',
             input_scale=1.0,
             steps_per_epoch=None,
@@ -91,9 +94,9 @@ class autoencoder(tf.keras.Model):
         self.input_kw = input_kw
         self.input_scale = input_scale
         return \
-            tf.keras.Model.fit_generator(
+            tf.keras.Model.fit(
                 self,
-                generator=generator.map(self.cast_batch),
+                x=x.map(self.cast_batch),
                 steps_per_epoch=steps_per_epoch,
                 epochs=epochs,
                 verbose=verbose,
