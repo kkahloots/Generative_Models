@@ -15,16 +15,16 @@ def sharp_diff(inputs, x_logits):
 
     @return: A scalar tensor. The Sharpness Difference error over each frame in the batch.
     """
-
     gen_frames = tf.sigmoid(x_logits)
     gt_frames = inputs
+
     shape = gen_frames.shape
     num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
     if shape[3] == 1:
         gen_frames = tf.image.grayscale_to_rgb(gen_frames)
         gt_frames = tf.image.grayscale_to_rgb(gt_frames)
 
-        shape = gen_frames.shape
+        shape = tf.shape(gen_frames)
         num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
 
     # gradient difference
@@ -48,4 +48,4 @@ def sharp_diff(inputs, x_logits):
     grad_diff = tf.abs(gt_grad_sum - gen_grad_sum)
 
     batch_errors = 10 * log10(1 / ((1 / num_pixels) * tf.reduce_sum(grad_diff, [1, 2, 3])))
-    return -tf.reduce_mean(batch_errors)
+    return tf.reduce_mean(batch_errors)
