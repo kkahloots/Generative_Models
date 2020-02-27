@@ -83,6 +83,7 @@ class AAE(autoencoder):
             shuffle=True,
             initial_epoch=0
     ):
+        print()
         print('training traditional basicAE')
         # 1- train the traditional basicAE
         autoencoder.fit(
@@ -149,6 +150,7 @@ class AAE(autoencoder):
         else:
             self.latent_discriminator_compile()
 
+        print()
         print('training latent real discriminator')
         # 5- train the latent discriminator
         self.latent_real_discriminator.fit(
@@ -168,6 +170,7 @@ class AAE(autoencoder):
             initial_epoch=initial_epoch
         )
 
+        print()
         print('training latent fake discriminator')
         self.latent_fake_discriminator.fit(
             x=x.map(self.latent_fake_discriminator_cast_batch),
@@ -193,13 +196,22 @@ class AAE(autoencoder):
         else:
             self.connect_together()
 
+        print()
         print('training together')
+        cbs = [cb for cb in callbacks if isinstance(cb, tf.keras.callbacks.CSVLogger)]
+        for cb in cbs:
+            cb.filename = cb.filename.split('.csv')[0] + '_together.csv'
+            mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.temp_metrics.items()]
+                            for fn in sublist]
+            cb.keys = ['loss'] + [fn+'_loss' for fn in self.latent_AA.output_names] + mertic_names
+            cb.append_header = cb.keys
+
         # 7- training together
         self.latent_AA.fit(
             x=x.map(self.together_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
-            verbose=1,
+            verbose=0,
             callbacks=callbacks,
             validation_data=validation_data,
             validation_steps=validation_steps,
@@ -248,6 +260,10 @@ class AAE(autoencoder):
             loss=create_adversarial_losses(),
             metrics=self.temp_metrics
         )
+        self.latent_AA.generate_sample = self.generate_sample
+        self.latent_AA.get_varibale = self.get_varibale
+        self.latent_AA.inputs_shape = self.inputs_shape
+        self.latent_AA.latent_dim = self.latent_dim
 
         print(self.latent_AA.summary())
 
