@@ -2,10 +2,10 @@ from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
 import tensorflow as tf
 
 from stats.adver_losses import create_adversarial_real_losses, create_adversarial_fake_losses, create_adversarial_losses
-from training.traditional.autoencoders.autoencoder import autoencoder
+from training.traditional.autoencoders.VAE import VAE as autoencoder
 from utils.swe.codes import copy_fn
 
-class AAE(autoencoder):
+class VAAE(autoencoder):
     def __init__(
             self,
             strategy=None,
@@ -22,6 +22,7 @@ class AAE(autoencoder):
             'latent_real_discriminator': self.latent_real_discriminator,
             'latent_fake_discriminator': self.latent_fake_discriminator
         }
+
 
     def latent_real_discriminator_cast_batch(self, batch):
         if self.input_kw:
@@ -83,7 +84,6 @@ class AAE(autoencoder):
             shuffle=True,
             initial_epoch=0
     ):
-        print('training traditional basicAE')
         # 1- train the traditional basicAE
         autoencoder.fit(
             self,
@@ -149,13 +149,12 @@ class AAE(autoencoder):
         else:
             self.latent_discriminator_compile()
 
-        print('training latent real discriminator')
         # 5- train the latent discriminator
         self.latent_real_discriminator.fit(
             x=x.map(self.latent_real_discriminator_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
-            verbose=1,
+            verbose=verbose,
             callbacks=None,
             validation_data=validation_data,
             validation_steps=validation_steps,
@@ -168,12 +167,11 @@ class AAE(autoencoder):
             initial_epoch=initial_epoch
         )
 
-        print('training latent fake discriminator')
         self.latent_fake_discriminator.fit(
             x=x.map(self.latent_fake_discriminator_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
-            verbose=1,
+            verbose=verbose,
             callbacks=None,
             validation_data=validation_data,
             validation_steps=validation_steps,
@@ -193,14 +191,13 @@ class AAE(autoencoder):
         else:
             self.connect_together()
 
-        print('training together')
         # 7- training together
         self.latent_AA.fit(
             x=x.map(self.together_cast_batch),
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
-            verbose=1,
-            callbacks=callbacks,
+            verbose=verbose,
+            callbacks=None,
             validation_data=validation_data,
             validation_steps=validation_steps,
             validation_freq=validation_freq,
@@ -251,7 +248,6 @@ class AAE(autoencoder):
 
         print(self.latent_AA.summary())
 
-
     def latent_discriminator_compile(self, **kwargs):
         self.latent_real_discriminator.compile(
             optimizer=self.optimizer,
@@ -273,5 +269,7 @@ class AAE(autoencoder):
     def adver_get_variables(self):
         return {**self.ae_get_variables(), **self.get_discriminators()}
 
+
     def adver_loss_functions(self):
         return {**self.adaptee_ae.loss_functions(), **self.get_discriminator_losses()}
+

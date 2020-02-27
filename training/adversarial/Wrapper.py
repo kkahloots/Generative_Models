@@ -15,14 +15,15 @@ def make_adver_VAE(
         variables_params,
         restore=None
     ):
-    return AE(
+    return AAE(
         model_name=model_name,
         inputs_shape=inputs_shape,
         outputs_shape=outputs_shape,
         latent_dim=latent_dim,
         variables_params=variables_params,
         restore=restore,
-        AE=TradAdapteeVAE
+        model_fn=create_graph,
+        encode_fn=encode_fn,
     )
 
 
