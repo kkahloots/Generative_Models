@@ -18,6 +18,7 @@
 import os
 from data.gt_load import gt_data, util
 import numpy as np
+import dask.array as da
 from six.moves import range
 import tensorflow as tf
 
@@ -48,8 +49,8 @@ class Shapes3D(gt_data.GroundTruthData):
         with tf.io.gfile.GFile(data_path, "rb") as f:
             # Data was saved originally using python2, so we need to set the encoding.
             data = np.load(f, encoding="latin1")
-        images = data["images"]
-        labels = data["labels"]
+        images = da.from_array(data["images"])
+        labels = da.from_array(data["labels"])
         n_samples = np.prod(images.shape[0:6])
         self.images = (
             images.reshape([n_samples, 64, 64, 3]).astype(np.float32) / 255.)

@@ -16,6 +16,7 @@
 """SmallNORB dataset."""
 import os
 from data.gt_load import gt_data, util
+import dask.array as da
 import numpy as np
 import PIL
 from six.moves import range
@@ -49,8 +50,8 @@ class SmallNORB(gt_data.GroundTruthData):
     """
 
     def __init__(self, data_template, data_chuncks):
-        self.images, features = _load_small_norb_chunks(data_template,
-                                                        data_chuncks)
+        self.images, features = da.from_array(_load_small_norb_chunks(data_template,
+                                                        data_chuncks))
         self.factor_sizes = [5, 10, 9, 18, 6]
         # Instances are not part of the latent space.
         self.latent_factor_indices = [0, 2, 3, 4]

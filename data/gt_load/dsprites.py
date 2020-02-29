@@ -18,6 +18,7 @@
 import os
 from data.gt_load import gt_data, util
 import numpy as np
+import dask.array as da
 import PIL
 from six.moves import range
 import tensorflow as tf
@@ -52,9 +53,9 @@ class DSprites(gt_data.GroundTruthData):
         with tf.io.gfile.GFile(self.data_path, "rb") as data_file:
             # Data was saved originally using python2, so we need to set the encoding.
             data = np.load(data_file, encoding="latin1", allow_pickle=True)
-            self.images = np.array(data["imgs"])
-            self.factor_sizes = np.array(
-                data["metadata"][()]["latents_sizes"], dtype=np.int64)
+            self.images = da.from_array(data["imgs"], chunks=100)
+            self.factor_sizes = da.from_array(
+                data["metadata"][()]["latents_sizes"], chunks=100)
         self.full_factor_sizes = [1, 3, 6, 40, 32, 32]
         self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
             self.factor_sizes)
