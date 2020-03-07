@@ -7,6 +7,7 @@ from evaluation.quantitive_metrics.metrics import create_metrics
 from graphs.basics.AE_graph import create_graph, create_losses, encode_fn, decode_fn, generate_sample
 from graphs.builder import load_models, save_models
 
+
 class autoencoder(tf.keras.Model):
     def __init__(
             self,
@@ -95,11 +96,12 @@ class autoencoder(tf.keras.Model):
             tf.keras.Model.fit(
                 self,
                 x=x.map(self.cast_batch),
+                y=y,
                 steps_per_epoch=steps_per_epoch,
                 epochs=epochs,
                 verbose=verbose,
                 callbacks=callbacks,
-                validation_data=validation_data,
+                validation_data=None if validation_data is None else validation_data.map(self.cast_batch),
                 validation_steps=validation_steps,
                 validation_freq=validation_freq,
                 class_weight=class_weight,
@@ -143,7 +145,7 @@ class autoencoder(tf.keras.Model):
             x = tf.cast(batch, dtype=tf.float32)/self.input_scale
 
         return {
-                   'inference_inputs': x
+                   'inference_inputs': x,
                }, \
                {
                    'x_logits': x

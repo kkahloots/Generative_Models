@@ -1,7 +1,9 @@
 import tensorflow as tf
+
 from graphs.basics.VAE_graph import create_graph, encode_fn, create_losses
-from training.traditional.autoencoders.autoencoder import autoencoder
 from stats.pdfs import log_normal_pdf
+from training.traditional.autoencoders.autoencoder import autoencoder
+
 
 class VAE(autoencoder):
     def __init__(

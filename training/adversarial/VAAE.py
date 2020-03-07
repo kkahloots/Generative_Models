@@ -1,9 +1,10 @@
-from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
 import tensorflow as tf
 
+from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
 from stats.adver_losses import create_adversarial_real_losses, create_adversarial_fake_losses, create_adversarial_losses
 from training.traditional.autoencoders.VAE import VAE as autoencoder
 from utils.swe.codes import copy_fn
+
 
 class VAAE(autoencoder):
     def __init__(
@@ -88,6 +89,7 @@ class VAAE(autoencoder):
         autoencoder.fit(
             self,
             x=x,
+            y=y,
             input_kw=input_kw,
             input_scale=input_scale,
             steps_per_epoch=steps_per_epoch,
@@ -152,11 +154,12 @@ class VAAE(autoencoder):
         # 5- train the latent discriminator
         self.latent_real_discriminator.fit(
             x=x.map(self.latent_real_discriminator_cast_batch),
+            y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
             callbacks=None,
-            validation_data=validation_data,
+            validation_data=validation_data.map(self.latent_real_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,
@@ -169,11 +172,12 @@ class VAAE(autoencoder):
 
         self.latent_fake_discriminator.fit(
             x=x.map(self.latent_fake_discriminator_cast_batch),
+            y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
             callbacks=None,
-            validation_data=validation_data,
+            validation_data=validation_data.map(self.latent_fake_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,
@@ -194,11 +198,12 @@ class VAAE(autoencoder):
         # 7- training together
         self.latent_AA.fit(
             x=x.map(self.together_cast_batch),
+            y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
             callbacks=None,
-            validation_data=validation_data,
+            validation_data=validation_data.map(self.together_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,

@@ -89,6 +89,7 @@ class AAE(autoencoder):
         autoencoder.fit(
             self,
             x=x,
+            y=y,
             input_kw=input_kw,
             input_scale=input_scale,
             steps_per_epoch=steps_per_epoch,
@@ -155,11 +156,12 @@ class AAE(autoencoder):
         # 5- train the latent discriminator
         self.latent_real_discriminator.fit(
             x=x.map(self.latent_real_discriminator_cast_batch),
+            y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=1,
             callbacks=None,
-            validation_data=validation_data,
+            validation_data=validation_data.map(self.latent_real_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,
@@ -174,11 +176,12 @@ class AAE(autoencoder):
         print('training latent fake discriminator')
         self.latent_fake_discriminator.fit(
             x=x.map(self.latent_fake_discriminator_cast_batch),
+            y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=1,
             callbacks=None,
-            validation_data=validation_data,
+            validation_data=validation_data.map(self.latent_fake_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,
@@ -209,11 +212,12 @@ class AAE(autoencoder):
         # 7- training together
         self.latent_AA.fit(
             x=x.map(self.together_cast_batch),
+            y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=0,
             callbacks=callbacks,
-            validation_data=validation_data,
+            validation_data=validation_data.map(self.together_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,
