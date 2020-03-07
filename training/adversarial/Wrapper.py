@@ -1,5 +1,4 @@
-from training.adversarial.AAE import AAE
-from training.traditional.autoencoders.VAE import VAE as TradAdapteeVAE
+from training.adversarial.autoencoders.AAE import AAE
 from training.traditional.conditional.AE import autoencoder as TradAdapteeCondAE
 from training.traditional.conditional.VAE import VAE as TradAdapteeCondVAE
 from training.traditional.conditional_transformative.AE import autoencoder as TradAdapteeCondTranAE
