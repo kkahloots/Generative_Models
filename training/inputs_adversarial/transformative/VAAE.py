@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from training.callbacks.early_stopping import EarlyStopping
 from graphs.adversarial_graph.AAE_graph import inputs_discriminate_encode_fn
 from stats.adver_losses import create_latent_adversarial_real_losses, create_latent_adversarial_fake_losses, create_latent_adversarial_losses
 from training.traditional.transformative.VAE import VAE as autoencoder
@@ -155,7 +156,7 @@ class VAAE(autoencoder):
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
-            callbacks=None,
+            callbacks=[EarlyStopping()],
             validation_data=validation_data.map(self.inputs_real_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
@@ -173,7 +174,7 @@ class VAAE(autoencoder):
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
-            callbacks=None,
+            callbacks=[EarlyStopping()],
             validation_data=validation_data.map(self.inputs_fake_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
@@ -193,13 +194,13 @@ class VAAE(autoencoder):
             self.connect_together()
 
         # 7- training together
-        self.logits_AA.fit(
+        self.inputs_AA.fit(
             x=x.map(self.together_cast_batch),
             y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
-            callbacks=None,
+            callbacks=[EarlyStopping()],
             validation_data=validation_data.map(self.together_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
@@ -223,55 +224,50 @@ class VAAE(autoencoder):
 
         _outputs = {
             'x_logits': x_logits,
-            'logits_real_pred': encoded['logits_real_pred'],
-            'logits_fake_pred': encoded['logits_fake_pred']
+            'inputs_real_pred': encoded['inputs_real_pred'],
+            'inputs_fake_pred': encoded['inputs_fake_pred']
         }
-        self.logits_AA = tf.keras.Model(
-            name='logits_AA',
+        self.inputs_AA = tf.keras.Model(
+            name='inputs_AA',
             inputs= _inputs,
             outputs=_outputs
         )
 
-        for i, _output in enumerate(self.logits_AA.output_names):
+        for i, _output in enumerate(self.inputs_AA.output_names):
             if 'tf_op_layer_x_logits' in _output :
-                self.logits_AA.output_names[i] = 'x_logits'
-            elif 'logits_fake_discriminator' in _output :
-                self.logits_AA.output_names[i] = 'logits_fake_discriminator_outputs'
-            elif 'logits_real_discriminator' in _output :
-                self.logits_AA.output_names[i] = 'logits_real_discriminator_outputs'
+                self.inputs_AA.output_names[i] = 'x_logits'
+            elif 'inputs_fake_discriminator' in _output :
+                self.inputs_AA.output_names[i] = 'inputs_fake_discriminator_outputs'
+            elif 'inputs_real_discriminator' in _output :
+                self.inputs_AA.output_names[i] = 'inputs_real_discriminator_outputs'
             else:
                 pass
 
-        self.logits_AA.compile(
+        self.inputs_AA.compile(
             optimizer=self.optimizer,
             loss=create_latent_adversarial_losses(),
             metrics=self.temp_metrics
         )
 
-        print(self.logits_AA.summary())
+        print(self.inputs_AA.summary())
 
-    def logits_discriminator_compile(self, **kwargs):
+    def inputs_discriminator_compile(self, **kwargs):
         self.inputs_real_discriminator.compile(
             optimizer=self.optimizer,
             loss=create_latent_adversarial_real_losses(),
             metrics=None
         )
 
-        print(self.logits_real_discriminator.summary())
+        print(self.inputs_real_discriminator.summary())
 
-        self.logits_fake_discriminator.compile(
+        self.inputs_fake_discriminator.compile(
             optimizer=self.optimizer,
             loss=create_latent_adversarial_fake_losses(),
             metrics=None
         )
 
-        print(self.logits_fake_discriminator.summary())
+        print(self.inputs_fake_discriminator.summary())
 
     # combined models special
     def adver_get_variables(self):
         return {**self.ae_get_variables(), **self.get_discriminators()}
-
-
-    def adver_loss_functions(self):
-        return {**self.adaptee_ae.loss_functions(), **self.get_discriminator_losses()}
-

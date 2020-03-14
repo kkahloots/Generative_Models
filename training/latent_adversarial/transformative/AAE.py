@@ -1,6 +1,6 @@
 from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
 import tensorflow as tf
-
+from training.callbacks.early_stopping import EarlyStopping
 from stats.adver_losses import create_latent_adversarial_real_losses, create_latent_adversarial_fake_losses, create_latent_adversarial_losses
 from training.traditional.transformative.AE import autoencoder
 from utils.swe.codes import copy_fn
@@ -157,7 +157,7 @@ class AAE(autoencoder):
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=1,
-            callbacks=None,
+            callbacks=[EarlyStopping()],
             validation_data=validation_data.map(self.latent_real_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
@@ -177,7 +177,7 @@ class AAE(autoencoder):
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=1,
-            callbacks=None,
+            callbacks=[EarlyStopping()],
             validation_data=validation_data.map(self.latent_fake_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
@@ -289,6 +289,3 @@ class AAE(autoencoder):
     # combined models special
     def adver_get_variables(self):
         return {**self.ae_get_variables(), **self.get_discriminators()}
-
-    def adver_loss_functions(self):
-        return {**self.adaptee_ae.loss_functions(), **self.get_discriminator_losses()}
