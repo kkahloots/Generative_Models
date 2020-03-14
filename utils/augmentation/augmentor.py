@@ -24,9 +24,8 @@ operations = {0: lambda: Skew(probability=1, skew_type="RANDOM", magnitude=1),
               2: lambda: Rotate(probability=1, rotation=random.randint(1, 360)),
               3: lambda: Shear(probability=1, max_shear_left=0, max_shear_right=random.randint(5, 15)) \
                  if random.randint(0,1)==1 else Shear(probability=1, max_shear_left=random.randint(5, 15), max_shear_right=0),
-              4: lambda: Flip(probability=1, top_bottom_left_right="RANDOM"),
-              5: lambda: Zoom(probability=1, min_factor=random.randint(2, 10)/10, max_factor=random.randint(10, 12)/10),
-              6: lambda: Colorize(probability=1),
-              7: lambda: Skitch(probability=1),
-              8: lambda: Clone(probability=1)
+              4: lambda: Zoom(probability=1, min_factor=random.randint(2, 10)/10, max_factor=random.randint(10, 12)/10),
+              5: lambda: Colorize(probability=1),
+              6: lambda: Skitch(probability=1),
+              7: lambda: Clone(probability=1)
              }

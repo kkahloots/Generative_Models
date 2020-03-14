@@ -1,8 +1,6 @@
-import random
 import cv2
 import numpy as np
 from Augmentor.Operations import Operation
-from PIL import Image
 import scipy.ndimage
 
 class Skitch(Operation):
@@ -35,7 +33,7 @@ class Skitch(Operation):
 
         def do(image):
             def grayscale(rgb):
-                return cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+                return cv2.cvtColor(np.array(rgb, dtype=np.float32), cv2.COLOR_BGR2GRAY)
 
             def dodge(front, back):
                 result = front * 255 / (255 - back)

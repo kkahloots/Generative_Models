@@ -1,20 +1,36 @@
 import tensorflow as tf
 from graphs.basics.AE_graph import bce
 
+def create_inputs_adversarial_losses():
+    return {
+        'inputs_real_discriminator_outputs': real_bce_fn,
+        'inputs_fake_discriminator_outputs': fake_bce_fn,
+         'x_logits': bce
+    }
 
-def create_adversarial_losses():
+def create_inputs_adversarial_real_losses():
+    return {
+        'inputs_real_discriminator_outputs': real_bce_fn,
+    }
+
+def create_inputs_adversarial_fake_losses():
+    return {
+        'inputs_fake_discriminator_outputs': fake_bce_fn,
+    }
+
+def create_latent_adversarial_losses():
     return {
         'latent_real_discriminator_outputs': real_bce_fn,
         'latent_fake_discriminator_outputs': fake_bce_fn,
          'x_logits': bce
     }
 
-def create_adversarial_real_losses():
+def create_latent_adversarial_real_losses():
     return {
         'latent_real_discriminator_outputs': real_bce_fn,
     }
 
-def create_adversarial_fake_losses():
+def create_latent_adversarial_fake_losses():
     return {
         'latent_fake_discriminator_outputs': fake_bce_fn,
     }

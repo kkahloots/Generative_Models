@@ -1,7 +1,7 @@
-from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
+from graphs.adversarial_graph.AAE_graph import logits_discriminate_encode_fn
 import tensorflow as tf
 
-from stats.adver_losses import create_adversarial_real_losses, create_adversarial_fake_losses, create_adversarial_losses
+from stats.adver_losses import create_latent_adversarial_real_losses, create_latent_adversarial_fake_losses, create_latent_adversarial_losses
 from training.traditional.transformative.AE import autoencoder
 from utils.swe.codes import copy_fn
 
@@ -19,32 +19,32 @@ class AAE(autoencoder):
 
     def get_discriminators(self):
         return {
-            'latent_real_discriminator': self.latent_real_discriminator,
-            'latent_fake_discriminator': self.latent_fake_discriminator
+            'logits_real_discriminator': self.logits_real_discriminator,
+            'logits_fake_discriminator': self.logits_fake_discriminator
         }
 
-    def latent_real_discriminator_cast_batch(self, xt0, xt1):
+    def logits_real_discriminator_cast_batch(self, xt0, xt1):
         xt0 = tf.cast(xt0, dtype=tf.float32) / self.input_scale
         xt1 = tf.cast(xt1, dtype=tf.float32) / self.input_scale
 
         en = autoencoder.encode(self, inputs={'inputs': xt0})
         return {'generative_inputs': en['x_latent'],
-                'latent_real_discriminator_inputs': en['x_latent']
+                'logits_real_discriminator_inputs': en['x_latent']
                 } ,\
                {
-                   'latent_real_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true')
+                   'logits_real_discriminator_outputs': tf.ones(shape=[self.batch_size]+[self.inputs_shape], name='real_true')
                }
 
-    def latent_fake_discriminator_cast_batch(self, xt0, xt1):
+    def logits_fake_discriminator_cast_batch(self, xt0, xt1):
         xt0 = tf.cast(xt0, dtype=tf.float32) / self.input_scale
         xt1 = tf.cast(xt1, dtype=tf.float32) / self.input_scale
 
         en = autoencoder.encode(self, inputs={'inputs': xt0})
         return {'generative_inputs': en['x_latent'],
-                'latent_fake_discriminator_inputs': en['x_latent']
+                'logits_fake_discriminator_inputs': en['x_latent']
                 } ,\
                {
-                   'latent_fake_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='fake_true')
+                   'logits_fake_discriminator_outputs': tf.zeros(shape=[self.batch_size]+[self.inputs_shape], name='fake_true')
                }
 
     def together_cast_batch(self,  xt0, xt1):
@@ -56,8 +56,8 @@ class AAE(autoencoder):
                    'generative_inputs': en['x_latent']} ,\
                {
                    'x_logits': xt1,
-                   'latent_real_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true'),
-                   'latent_fake_discriminator_outputs': tf.zeros(shape=[self.batch_size, 1], name='fake_true')
+                   'logits_real_discriminator_outputs': tf.ones(shape=[self.batch_size]+[self.inputs_shape], name='real_true'),
+                   'logits_fake_discriminator_outputs': tf.zeros(shape=[self.batch_size]+[self.inputs_shape], name='fake_true')
                }
 
     def fit(
@@ -104,7 +104,7 @@ class AAE(autoencoder):
             initial_epoch=initial_epoch
         )
 
-        def make_latent_discriminator():
+        def make_logits_discriminator():
             for k, var in self.get_variables().items():
                 for layer in var.layers:
                     if not isinstance(layer, tf.keras.layers.Activation):
@@ -113,30 +113,30 @@ class AAE(autoencoder):
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_real_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='logits_real_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
-            self.latent_real_discriminator = tf.keras.Model(
-                name='latent_real_discriminator',
+            self.logits_real_discriminator = tf.keras.Model(
+                name='logits_real_discriminator',
                 inputs=temp_layers.inputs,
                 outputs=temp_layers.outputs
             )
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_fake_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='logits_fake_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
-            self.latent_fake_discriminator = tf.keras.Model(
-                name='latent_fake_discriminator',
+            self.logits_fake_discriminator = tf.keras.Model(
+                name='logits_fake_discriminator',
                 inputs=temp_layers.inputs,
                 outputs=temp_layers.outputs
             )
 
-        # 2- create a latent discriminator
+        # 2- create a logits discriminator
         if self.strategy:
             with self.strategy:
-                make_latent_discriminator()
+                make_logits_discriminator()
         else:
-            make_latent_discriminator()
+            make_logits_discriminator()
 
         # 3- clone autoencoder variables
         self.ae_get_variables = copy_fn(self.get_variables)
@@ -144,21 +144,21 @@ class AAE(autoencoder):
         # 4- switch to discriminate
         if self.strategy:
             if self.strategy:
-                self.latent_discriminator_compile()
+                self.logits_discriminator_compile()
         else:
-            self.latent_discriminator_compile()
+            self.logits_discriminator_compile()
 
         print()
-        print('training latent real discriminator')
-        # 5- train the latent discriminator
-        self.latent_real_discriminator.fit(
-            x=x.map(self.latent_real_discriminator_cast_batch),
+        print('training logits real discriminator')
+        # 5- train the logits discriminator
+        self.logits_real_discriminator.fit(
+            x=x.map(self.logits_real_discriminator_cast_batch),
             y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=1,
             callbacks=None,
-            validation_data=validation_data.map(self.latent_real_discriminator_cast_batch),
+            validation_data=validation_data.map(self.logits_real_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,
@@ -170,15 +170,15 @@ class AAE(autoencoder):
         )
 
         print()
-        print('training latent fake discriminator')
-        self.latent_fake_discriminator.fit(
-            x=x.map(self.latent_fake_discriminator_cast_batch),
+        print('training logits fake discriminator')
+        self.logits_fake_discriminator.fit(
+            x=x.map(self.logits_fake_discriminator_cast_batch),
             y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=1,
             callbacks=None,
-            validation_data=validation_data.map(self.latent_fake_discriminator_cast_batch),
+            validation_data=validation_data.map(self.logits_fake_discriminator_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
             class_weight=class_weight,
@@ -189,7 +189,7 @@ class AAE(autoencoder):
             initial_epoch=initial_epoch
         )
 
-        # 6- connect all for adversarial training
+        # 6- connect all for inputs_adversarial training
         if self.strategy:
             if self.strategy:
                 self.connect_together()
@@ -198,16 +198,16 @@ class AAE(autoencoder):
 
         print()
         print('training together')
-        cbs = [cb for cb in callbacks if isinstance(cb, tf.keras.callbacks.CSVLogger)]
+        cbs = [cb for cb in callbacks or [] if isinstance(cb, tf.keras.callbacks.CSVLogger)]
         for cb in cbs:
             cb.filename = cb.filename.split('.csv')[0] + '_together.csv'
             mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.temp_metrics.items()]
                             for fn in sublist]
-            cb.keys = ['loss'] + [fn+'_loss' for fn in self.latent_AA.output_names] + mertic_names
+            cb.keys = ['loss'] + [fn+'_loss' for fn in self.logits_AA.output_names] + mertic_names
             cb.append_header = cb.keys
 
         # 7- training together
-        self.latent_AA.fit(
+        self.logits_AA.fit(
             x=x.map(self.together_cast_batch),
             y=y,
             steps_per_epoch=steps_per_epoch,
@@ -228,7 +228,7 @@ class AAE(autoencoder):
 
     def connect_together(self):
         self.get_variables = self.adver_get_variables
-        self.encode_fn = latent_discriminate_encode_fn
+        self.encode_fn = logits_discriminate_encode_fn
         _inputs = {
             'inputs': self.get_variables()['inference'].inputs[0]
         }
@@ -237,54 +237,54 @@ class AAE(autoencoder):
 
         _outputs = {
             'x_logits': x_logits,
-            'real_pred': encoded['real_pred'],
-            'fake_pred': encoded['fake_pred']
+            'logits_real_pred': encoded['logits_real_pred'],
+            'logits_fake_pred': encoded['logits_fake_pred']
         }
-        self.latent_AA = tf.keras.Model(
-            name='latent_AA',
+        self.logits_AA = tf.keras.Model(
+            name='logits_AA',
             inputs= _inputs,
             outputs=_outputs
         )
 
-        for i, _output in enumerate(self.latent_AA.output_names):
+        for i, _output in enumerate(self.logits_AA.output_names):
             if 'tf_op_layer_x_logits' in _output :
-                self.latent_AA.output_names[i] = 'x_logits'
-            elif 'latent_fake_discriminator' in _output :
-                self.latent_AA.output_names[i] = 'latent_fake_discriminator_outputs'
-            elif 'latent_real_discriminator' in _output :
-                self.latent_AA.output_names[i] = 'latent_real_discriminator_outputs'
+                self.logits_AA.output_names[i] = 'x_logits'
+            elif 'logits_fake_discriminator' in _output :
+                self.logits_AA.output_names[i] = 'logits_fake_discriminator_outputs'
+            elif 'logits_real_discriminator' in _output :
+                self.logits_AA.output_names[i] = 'logits_real_discriminator_outputs'
             else:
                 pass
 
-        self.latent_AA.compile(
+        self.logits_AA.compile(
             optimizer=self.optimizer,
-            loss=create_adversarial_losses(),
+            loss=create_latent_adversarial_losses(),
             metrics=self.temp_metrics
         )
-        self.latent_AA.generate_sample = self.generate_sample
-        self.latent_AA.get_varibale = self.get_varibale
-        self.latent_AA.inputs_shape = self.inputs_shape
-        self.latent_AA.latent_dim = self.latent_dim
+        self.logits_AA.generate_sample = self.generate_sample
+        self.logits_AA.get_varibale = self.get_varibale
+        self.logits_AA.inputs_shape = self.inputs_shape
+        self.logits_AA.latent_dim = self.latent_dim
 
-        print(self.latent_AA.summary())
+        print(self.logits_AA.summary())
 
 
-    def latent_discriminator_compile(self, **kwargs):
-        self.latent_real_discriminator.compile(
+    def logits_discriminator_compile(self, **kwargs):
+        self.logits_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_adversarial_real_losses(),
+            loss=create_latent_adversarial_real_losses(),
             metrics=None
         )
 
-        print(self.latent_real_discriminator.summary())
+        print(self.logits_real_discriminator.summary())
 
-        self.latent_fake_discriminator.compile(
+        self.logits_fake_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_adversarial_fake_losses(),
+            loss=create_latent_adversarial_fake_losses(),
             metrics=None
         )
 
-        print(self.latent_fake_discriminator.summary())
+        print(self.logits_fake_discriminator.summary())
 
     # combined models special
     def adver_get_variables(self):

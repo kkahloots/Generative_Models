@@ -1,12 +1,11 @@
+from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
 import tensorflow as tf
 
-from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
-from stats.adver_losses import create_adversarial_real_losses, create_adversarial_fake_losses, create_adversarial_losses
-from training.traditional.autoencoders.VAE import VAE as autoencoder
+from stats.adver_losses import create_latent_adversarial_real_losses, create_latent_adversarial_fake_losses, create_latent_adversarial_losses
+from training.traditional.transformative.AE import autoencoder
 from utils.swe.codes import copy_fn
 
-
-class VAAE(autoencoder):
+class AAE(autoencoder):
     def __init__(
             self,
             strategy=None,
@@ -24,13 +23,11 @@ class VAAE(autoencoder):
             'latent_fake_discriminator': self.latent_fake_discriminator
         }
 
+    def latent_real_discriminator_cast_batch(self, xt0, xt1):
+        xt0 = tf.cast(xt0, dtype=tf.float32) / self.input_scale
+        xt1 = tf.cast(xt1, dtype=tf.float32) / self.input_scale
 
-    def latent_real_discriminator_cast_batch(self, batch):
-        if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
-        else:
-            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
+        en = autoencoder.encode(self, inputs={'inputs': xt0})
         return {'generative_inputs': en['x_latent'],
                 'latent_real_discriminator_inputs': en['x_latent']
                 } ,\
@@ -38,29 +35,27 @@ class VAAE(autoencoder):
                    'latent_real_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true')
                }
 
-    def latent_fake_discriminator_cast_batch(self, batch):
-        if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
-        else:
-            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
+    def latent_fake_discriminator_cast_batch(self, xt0, xt1):
+        xt0 = tf.cast(xt0, dtype=tf.float32) / self.input_scale
+        xt1 = tf.cast(xt1, dtype=tf.float32) / self.input_scale
+
+        en = autoencoder.encode(self, inputs={'inputs': xt0})
         return {'generative_inputs': en['x_latent'],
                 'latent_fake_discriminator_inputs': en['x_latent']
                 } ,\
                {
-                   'latent_fake_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='fake_true')
+                   'latent_fake_discriminator_outputs': tf.zeros(shape=[self.batch_size, 1], name='fake_true')
                }
 
-    def together_cast_batch(self, batch):
-        if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
-        else:
-            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
-        return {   'inference_inputs': x,
+    def together_cast_batch(self,  xt0, xt1):
+        xt0 = tf.cast(xt0, dtype=tf.float32) / self.input_scale
+        xt1 = tf.cast(xt1, dtype=tf.float32) / self.input_scale
+
+        en = autoencoder.encode(self, inputs={'inputs': xt0})
+        return {   'inference_inputs': xt0,
                    'generative_inputs': en['x_latent']} ,\
                {
-                   'x_logits': x,
+                   'x_logits': xt1,
                    'latent_real_discriminator_outputs': tf.ones(shape=[self.batch_size, 1], name='real_true'),
                    'latent_fake_discriminator_outputs': tf.zeros(shape=[self.batch_size, 1], name='fake_true')
                }
@@ -85,6 +80,8 @@ class VAAE(autoencoder):
             shuffle=True,
             initial_epoch=0
     ):
+        print()
+        print('training traditional basicAE')
         # 1- train the traditional basicAE
         autoencoder.fit(
             self,
@@ -151,13 +148,15 @@ class VAAE(autoencoder):
         else:
             self.latent_discriminator_compile()
 
+        print()
+        print('training latent real discriminator')
         # 5- train the latent discriminator
         self.latent_real_discriminator.fit(
             x=x.map(self.latent_real_discriminator_cast_batch),
             y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
-            verbose=verbose,
+            verbose=1,
             callbacks=None,
             validation_data=validation_data.map(self.latent_real_discriminator_cast_batch),
             validation_steps=validation_steps,
@@ -170,12 +169,14 @@ class VAAE(autoencoder):
             initial_epoch=initial_epoch
         )
 
+        print()
+        print('training latent fake discriminator')
         self.latent_fake_discriminator.fit(
             x=x.map(self.latent_fake_discriminator_cast_batch),
             y=y,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
-            verbose=verbose,
+            verbose=1,
             callbacks=None,
             validation_data=validation_data.map(self.latent_fake_discriminator_cast_batch),
             validation_steps=validation_steps,
@@ -188,12 +189,22 @@ class VAAE(autoencoder):
             initial_epoch=initial_epoch
         )
 
-        # 6- connect all for adversarial training
+        # 6- connect all for latent_adversarial training
         if self.strategy:
             if self.strategy:
                 self.connect_together()
         else:
             self.connect_together()
+
+        print()
+        print('training together')
+        cbs = [cb for cb in callbacks or [] if isinstance(cb, tf.keras.callbacks.CSVLogger)]
+        for cb in cbs:
+            cb.filename = cb.filename.split('.csv')[0] + '_together.csv'
+            mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.temp_metrics.items()]
+                            for fn in sublist]
+            cb.keys = ['loss'] + [fn+'_loss' for fn in self.latent_AA.output_names] + mertic_names
+            cb.append_header = cb.keys
 
         # 7- training together
         self.latent_AA.fit(
@@ -202,7 +213,7 @@ class VAAE(autoencoder):
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             verbose=verbose,
-            callbacks=None,
+            callbacks=callbacks,
             validation_data=validation_data.map(self.together_cast_batch),
             validation_steps=validation_steps,
             validation_freq=validation_freq,
@@ -226,8 +237,8 @@ class VAAE(autoencoder):
 
         _outputs = {
             'x_logits': x_logits,
-            'real_pred': encoded['real_pred'],
-            'fake_pred': encoded['fake_pred']
+            'latent_real_pred': encoded['latent_real_pred'],
+            'latent_fake_pred': encoded['latent_fake_pred']
         }
         self.latent_AA = tf.keras.Model(
             name='latent_AA',
@@ -247,16 +258,21 @@ class VAAE(autoencoder):
 
         self.latent_AA.compile(
             optimizer=self.optimizer,
-            loss=create_adversarial_losses(),
+            loss=create_latent_adversarial_losses(),
             metrics=self.temp_metrics
         )
+        self.latent_AA.generate_sample = self.generate_sample
+        self.latent_AA.get_varibale = self.get_varibale
+        self.latent_AA.inputs_shape = self.inputs_shape
+        self.latent_AA.latent_dim = self.latent_dim
 
         print(self.latent_AA.summary())
+
 
     def latent_discriminator_compile(self, **kwargs):
         self.latent_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_adversarial_real_losses(),
+            loss=create_latent_adversarial_real_losses(),
             metrics=None
         )
 
@@ -264,7 +280,7 @@ class VAAE(autoencoder):
 
         self.latent_fake_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_adversarial_fake_losses(),
+            loss=create_latent_adversarial_fake_losses(),
             metrics=None
         )
 
@@ -274,7 +290,5 @@ class VAAE(autoencoder):
     def adver_get_variables(self):
         return {**self.ae_get_variables(), **self.get_discriminators()}
 
-
     def adver_loss_functions(self):
         return {**self.adaptee_ae.loss_functions(), **self.get_discriminator_losses()}
-
