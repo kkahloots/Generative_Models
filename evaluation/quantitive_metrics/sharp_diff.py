@@ -29,7 +29,7 @@ def sharp_diff(inputs, x_logits):
 
     # gradient difference
     # create filters [-1, 1] and [[1],[-1]] for diffing to the left and down respectively.
-    # TODO: Could this be simplified with one filter [[-1, 2], [0, -1]]?
+    # Could this be simplified with one filter [[-1, 2], [0, -1]]?
     pos = tf.constant(np.identity(3), dtype=tf.float32)
     neg = -1 * pos
     filter_x = tf.expand_dims(tf.stack([neg, pos]), 0)  # [-1, 1]
