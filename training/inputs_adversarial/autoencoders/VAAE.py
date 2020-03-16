@@ -11,9 +11,11 @@ from utils.swe.codes import copy_fn
 class VAAE(autoencoder):
     def __init__(
             self,
+            inputs_adversarial_losses,
             strategy=None,
             **kwargs
     ):
+        self.inputs_adversarial_losses = inputs_adversarial_losses
         self.strategy = strategy
         autoencoder.__init__(
             self,
@@ -267,7 +269,7 @@ class VAAE(autoencoder):
 
         self.inputs_AA.compile(
             optimizer=self.optimizer,
-            loss=create_inputs_adversarial_losses(),
+            loss=self.inputs_adversarial_losses['inputs_adversarial_losses'](),
             metrics=self.temp_metrics
         )
 
@@ -280,7 +282,7 @@ class VAAE(autoencoder):
     def inputs_discriminator_compile(self, **kwargs):
         self.inputs_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_inputs_adversarial_real_losses(),
+            loss=self.inputs_adversarial_losses['inputs_adversarial_real_losses'](),
             metrics=None
         )
 
@@ -288,7 +290,7 @@ class VAAE(autoencoder):
 
         self.inputs_fake_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_inputs_adversarial_fake_losses(),
+            loss=self.inputs_adversarial_losses['inputs_adversarial_fake_losses'](),
             metrics=None
         )
 
