@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from training.callbacks.early_stopping import EarlyStopping
 from graphs.adversarial_graph.AAE_graph import inputs_discriminate_encode_fn
-from stats.adver_losses import create_latent_adversarial_real_losses, create_latent_adversarial_fake_losses, create_latent_adversarial_losses
+from stats.tranditional_adversarial_losses import create_latent_adversarial_real_losses, create_latent_adversarial_fake_losses, create_latent_adversarial_losses
 from training.traditional.transformative.VAE import VAE as autoencoder
 from utils.swe.codes import copy_fn
 
