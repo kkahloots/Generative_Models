@@ -2,12 +2,6 @@ from graphs.adversarial_graph.AAE_graph import inputs_latent_discriminate_encode
 import tensorflow as tf
 from training.callbacks.early_stopping import EarlyStopping
 
-from stats.adver_losses import create_inputs_latent_adversarial_losses, \
-    create_inputs_adversarial_real_losses, \
-    create_inputs_adversarial_fake_losses, \
-    create_latent_adversarial_real_losses, \
-    create_latent_adversarial_fake_losses
-
 from training.traditional.autoencoders.autoencoder import autoencoder
 from utils.swe.codes import copy_fn
 
@@ -154,7 +148,7 @@ class AAE(autoencoder):
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_real_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='latent_real_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
             self.latent_real_discriminator = tf.keras.Model(
                 name='latent_real_discriminator',
@@ -164,7 +158,7 @@ class AAE(autoencoder):
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='latent_fake_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='latent_fake_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
             self.latent_fake_discriminator = tf.keras.Model(
                 name='latent_fake_discriminator',

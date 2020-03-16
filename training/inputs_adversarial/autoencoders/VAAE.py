@@ -2,8 +2,7 @@ import tensorflow as tf
 from training.callbacks.early_stopping import EarlyStopping
 
 from graphs.adversarial_graph.VAAE_graph import inputs_discriminate_encode_fn
-from stats.adver_losses import create_inputs_adversarial_real_losses, create_inputs_adversarial_fake_losses, \
-    create_inputs_adversarial_losses
+
 from training.traditional.autoencoders.VAE import VAE as autoencoder
 from utils.swe.codes import copy_fn
 
@@ -127,7 +126,7 @@ class VAAE(autoencoder):
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['encoder_mean']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='inputs_real_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='inputs_real_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
             self.inputs_real_discriminator = tf.keras.Model(
                 name='inputs_real_discriminator',
@@ -137,7 +136,7 @@ class VAAE(autoencoder):
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['encoder_mean']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='inputs_fake_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='inputs_fake_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
             self.inputs_fake_discriminator = tf.keras.Model(
                 name='inputs_fake_discriminator',

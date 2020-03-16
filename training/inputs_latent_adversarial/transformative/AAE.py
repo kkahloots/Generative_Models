@@ -2,21 +2,17 @@ from graphs.adversarial_graph.AAE_graph import inputs_latent_discriminate_encode
 import tensorflow as tf
 from training.callbacks.early_stopping import EarlyStopping
 
-from stats.adver_losses import create_inputs_latent_adversarial_losses, \
-    create_inputs_adversarial_real_losses, \
-    create_inputs_adversarial_fake_losses, \
-    create_latent_adversarial_real_losses, \
-    create_latent_adversarial_fake_losses
-
 from training.traditional.transformative.AE import autoencoder
 from utils.swe.codes import copy_fn
 
 class AAE(autoencoder):
     def __init__(
             self,
+            inputs_latent_adversarial_losses,
             strategy=None,
             **kwargs
     ):
+        self.inputs_latent_adversarial_losses=inputs_latent_adversarial_losses
         self.strategy = strategy
         autoencoder.__init__(
             self,
@@ -382,7 +378,7 @@ class AAE(autoencoder):
 
         self.inputs_latent_AA.compile(
             optimizer=self.optimizer,
-            loss=create_inputs_latent_adversarial_losses(),
+            loss=self.inputs_latent_adversarial_losses['inputs_latent_adversarial_losses'](),
             metrics=self.temp_metrics
         )
         self.inputs_latent_AA.generate_sample = self.generate_sample
@@ -395,7 +391,7 @@ class AAE(autoencoder):
     def latent_discriminator_compile(self, **kwargs):
         self.latent_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_latent_adversarial_real_losses(),
+            loss=self.inputs_latent_adversarial_losses['latent_adversarial_real_losses'](),
             metrics=None
         )
 
@@ -403,7 +399,7 @@ class AAE(autoencoder):
 
         self.latent_fake_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_latent_adversarial_fake_losses(),
+            loss=self.inputs_latent_adversarial_losses['latent_adversarial_fake_losses'](),
             metrics=None
         )
 
@@ -412,7 +408,7 @@ class AAE(autoencoder):
     def inputs_discriminator_compile(self, **kwargs):
         self.inputs_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_inputs_adversarial_real_losses(),
+            loss=self.inputs_latent_adversarial_losses['inputs_adversarial_real_losses'](),
             metrics=None
         )
 
@@ -420,7 +416,7 @@ class AAE(autoencoder):
 
         self.inputs_fake_discriminator.compile(
             optimizer=self.optimizer,
-            loss=create_inputs_adversarial_fake_losses(),
+            loss=self.inputs_latent_adversarial_losses['inputs_adversarial_fake_losses'](),
             metrics=None
         )
 

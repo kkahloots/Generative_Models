@@ -117,7 +117,7 @@ class AAE(autoencoder):
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['inference']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='inputs_real_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='inputs_real_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
             self.inputs_real_discriminator = tf.keras.Model(
                 name='inputs_real_discriminator',
@@ -127,7 +127,7 @@ class AAE(autoencoder):
 
             temp_layers = tf.keras.models.clone_model(self.get_variables()['inference']).layers
             temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='sigmoid', name='inputs_fake_discriminator_outputs'))
+            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='inputs_fake_discriminator_outputs'))
             temp_layers = tf.keras.Sequential(temp_layers)
             self.inputs_fake_discriminator = tf.keras.Model(
                 name='inputs_fake_discriminator',

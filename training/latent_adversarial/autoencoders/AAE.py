@@ -1,7 +1,6 @@
 from graphs.adversarial_graph.AAE_graph import latent_discriminate_encode_fn
 import tensorflow as tf
 from training.callbacks.early_stopping import EarlyStopping
-from stats.adver_losses import create_latent_adversarial_real_losses, create_latent_adversarial_fake_losses, create_latent_adversarial_losses
 from training.traditional.autoencoders.autoencoder import autoencoder
 from utils.swe.codes import copy_fn
 
