@@ -10,12 +10,12 @@ from utils.swe.codes import copy_fn
 class VAAE(autoencoder):
     def __init__(
             self,
-            inputs_adversarial_losses,
+            adversarial_losses,
             strategy=None,
             **kwargs
     ):
-        self.inputs_adversarial_losses = inputs_adversarial_losses
-        self.strategy = strategy
+        self.adversarial_losses=adversarial_losses
+        self.strategy=strategy
         autoencoder.__init__(
             self,
             **kwargs
@@ -210,7 +210,7 @@ class VAAE(autoencoder):
         cbs = [cb for cb in callbacks or [] if isinstance(cb, tf.keras.callbacks.CSVLogger)]
         for cb in cbs:
             cb.filename = cb.filename.split('.csv')[0] + '_together.csv'
-            mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.temp_metrics.items()]
+            mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.ae_metrics.items()]
                             for fn in sublist]
             cb.keys = ['loss'] + [fn+'_loss' for fn in self.inputs_AA.output_names] + mertic_names
             cb.append_header = cb.keys
@@ -266,10 +266,14 @@ class VAAE(autoencoder):
             else:
                 pass
 
+        weight = 0.999
+        aeloss_weights = {k: weight // len(self.ae_losses) for k in self.ae_losses.keys()}
+        adloss_weights = {k: (1 - weight) // len(self.adversarial_losses) for k in self.adversarial_losses.keys()}
         self.inputs_AA.compile(
             optimizer=self.optimizer,
-            loss=self.inputs_adversarial_losses['inputs_adversarial_losses'](),
-            metrics=self.temp_metrics
+            loss={**self.ae_losses, **self.adversarial_losses},
+            metrics=self.ae_metrics,
+            loss_weights={**aeloss_weights, **adloss_weights}
         )
 
         self.inputs_AA.generate_sample = self.generate_sample
@@ -281,7 +285,7 @@ class VAAE(autoencoder):
     def inputs_discriminator_compile(self, **kwargs):
         self.inputs_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=self.inputs_adversarial_losses['inputs_adversarial_real_losses'](),
+            loss={'inputs_adversarial_real_losses':self.adversarial_losses()['inputs_adversarial_real_losses']},
             metrics=None
         )
 
@@ -289,7 +293,7 @@ class VAAE(autoencoder):
 
         self.inputs_fake_discriminator.compile(
             optimizer=self.optimizer,
-            loss=self.inputs_adversarial_losses['inputs_adversarial_fake_losses'](),
+            loss={'inputs_adversarial_fake_losses':self.adversarial_losses()['inputs_adversarial_fake_losses']},
             metrics=None
         )
 

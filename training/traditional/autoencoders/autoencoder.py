@@ -66,7 +66,8 @@ class autoencoder(tf.keras.Model):
             metrics=create_metrics(),
             **kwargs
     ):
-        self.temp_metrics = metrics
+        self.ae_losses = create_losses()
+        self.ae_metrics = metrics
         tf.keras.Model.compile(self, optimizer=optimizer, loss=loss, metrics=metrics, **kwargs)
         print(self.summary())
 

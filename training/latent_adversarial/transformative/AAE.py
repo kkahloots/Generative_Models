@@ -7,11 +7,11 @@ from utils.swe.codes import copy_fn
 class AAE(autoencoder):
     def __init__(
             self,
-            latent_adversarial_losses,
+            adversarial_losses,
             strategy=None,
             **kwargs
     ):
-        self.latent_adversarial_losses = latent_adversarial_losses
+        self.adversarial_losses = adversarial_losses
         self.strategy = strategy
         autoencoder.__init__(
             self,
@@ -202,7 +202,7 @@ class AAE(autoencoder):
         cbs = [cb for cb in callbacks or [] if isinstance(cb, tf.keras.callbacks.CSVLogger)]
         for cb in cbs:
             cb.filename = cb.filename.split('.csv')[0] + '_together.csv'
-            mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.temp_metrics.items()]
+            mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.ae_metrics.items()]
                             for fn in sublist]
             cb.keys = ['loss'] + [fn+'_loss' for fn in self.latent_AA.output_names] + mertic_names
             cb.append_header = cb.keys
@@ -257,11 +257,16 @@ class AAE(autoencoder):
             else:
                 pass
 
+        weight = 0.999
+        aeloss_weights = {k: weight // len(self.ae_losses) for k in self.ae_losses.keys()}
+        adloss_weights = {k: (1 - weight) // len(self.adversarial_losses) for k in self.adversarial_losses.keys()}
         self.latent_AA.compile(
             optimizer=self.optimizer,
-            loss=self.latent_adversarial_losses['latent_adversarial_losses'](),
-            metrics=self.temp_metrics
+            loss={**self.ae_losses, **self.adversarial_losses},
+            metrics=self.ae_metrics,
+            loss_weights={**aeloss_weights, **adloss_weights}
         )
+
         self.latent_AA.generate_sample = self.generate_sample
         self.latent_AA.get_varibale = self.get_varibale
         self.latent_AA.inputs_shape = self.inputs_shape
@@ -273,7 +278,7 @@ class AAE(autoencoder):
     def latent_discriminator_compile(self, **kwargs):
         self.latent_real_discriminator.compile(
             optimizer=self.optimizer,
-            loss=self.latent_adversarial_losses['latent_adversarial_real_losses'](),
+            loss={'latent_adversarial_real_losses':self.adversarial_losses()['latent_adversarial_real_losses']},
             metrics=None
         )
 
@@ -281,7 +286,7 @@ class AAE(autoencoder):
 
         self.latent_fake_discriminator.compile(
             optimizer=self.optimizer,
-            loss=self.latent_adversarial_losses['latent_adversarial_fake_losses'](),
+            loss={'latent_adversarial_fake_losses':self.adversarial_losses()['latent_adversarial_fake_losses']},
             metrics=None
         )
 

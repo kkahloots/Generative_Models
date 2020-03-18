@@ -1,5 +1,4 @@
 import tensorflow as tf
-from graphs.basics.AE_graph import bce
 
 def create_inputs_latent_adversarial_losses():
     return {
@@ -7,14 +6,12 @@ def create_inputs_latent_adversarial_losses():
         'inputs_fake_discriminator_outputs': fake_bce_fn,
         'latent_real_discriminator_outputs': real_bce_fn,
         'latent_fake_discriminator_outputs': fake_bce_fn,
-         'x_logits': bce
     }
 
 def create_inputs_adversarial_losses():
     return {
         'inputs_real_discriminator_outputs': real_bce_fn,
         'inputs_fake_discriminator_outputs': fake_bce_fn,
-         'x_logits': bce
     }
 
 def create_inputs_adversarial_real_losses():
@@ -31,7 +28,6 @@ def create_latent_adversarial_losses():
     return {
         'latent_real_discriminator_outputs': real_bce_fn,
         'latent_fake_discriminator_outputs': fake_bce_fn,
-         'x_logits': bce
     }
 
 def create_latent_adversarial_real_losses():
@@ -44,10 +40,10 @@ def create_latent_adversarial_fake_losses():
         'latent_fake_discriminator_outputs': fake_bce_fn,
     }
 
-def real_bce_fn(real_true, real_pred):
-    real_loss = tf.losses.binary_crossentropy(y_true=real_true, y_pred=real_pred)
+def real_bce_fn(real_true, real_pred_logits):
+    real_loss = tf.losses.binary_crossentropy(y_true=real_true, y_pred=tf.sigmoid(real_pred_logits))
     return  0.5 * real_loss
 
-def fake_bce_fn(fake_true, fake_pred):
-    fake_loss = tf.losses.binary_crossentropy(y_true=fake_true, y_pred=fake_pred)
+def fake_bce_fn(fake_true, fake_pred_logits):
+    fake_loss = tf.losses.binary_crossentropy(y_true=fake_true, y_pred=tf.sigmoid(fake_pred_logits))
     return  0.5 * fake_loss
