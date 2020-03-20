@@ -57,7 +57,7 @@ def create_sequence(lay_shapes, isConv=True, kernel_shape=3, sampling_rate=2, ad
 
     return x
 
-def make_variable(inputs_shape, outputs_shape, layers=[], name=None):
+def create_variable(inputs_shape, outputs_shape, layers=[], name=None):
     variable = \
         tf.keras.Sequential(
         name = name,
@@ -92,10 +92,10 @@ def load_models(file_name, variables_names):
         log_message(variable.summary(), logging.WARN)
     return vars
 
-def make_models(variables_params):
+def create_models(variables_params):
     vars = []
     for params in variables_params:
-        var = make_variable(**params)
+        var = create_variable(**params)
         log_message(var.summary(), logging.WARN)
         vars += [var]
     return vars

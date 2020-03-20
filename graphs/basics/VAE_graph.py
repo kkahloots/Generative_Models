@@ -1,12 +1,12 @@
 import tensorflow as tf
-from graphs.basics.AE_graph import make_variables
+from graphs.basics.AE_graph import create_variables
 from stats.ae_losses import reconstuction_loss
 from stats.pdfs import log_normal_pdf
 
 # Graph
 def create_graph(name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params] #['encoder_mean',  'encoder_logvar', 'generative']
-    variables = make_variables(variables_params=variables_params, model_name=name, restore=restore)
+    variables = create_variables(variables_params=variables_params, model_name=name, restore=restore)
 
     def get_variables():
         return dict(zip(variables_names, variables))

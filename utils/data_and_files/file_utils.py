@@ -5,7 +5,7 @@ import csv
 import logging
 from utils.reporting.logging import log_message
 
-def make_random_string(stringLength=10):
+def create_random_string(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))

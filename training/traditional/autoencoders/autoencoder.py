@@ -96,13 +96,13 @@ class autoencoder(tf.keras.Model):
         return \
             tf.keras.Model.fit(
                 self,
-                x=x.map(self.cast_batch),
+                x=x.map(self.batch_cast),
                 y=y,
                 steps_per_epoch=steps_per_epoch,
                 epochs=epochs,
                 verbose=verbose,
                 callbacks=callbacks,
-                validation_data=None if validation_data is None else validation_data.map(self.cast_batch),
+                validation_data=None if validation_data is None else validation_data.map(self.batch_cast),
                 validation_steps=validation_steps,
                 validation_freq=validation_freq,
                 class_weight=class_weight,
@@ -139,7 +139,7 @@ class autoencoder(tf.keras.Model):
         file_Name = os.path.join(filepath, self.name)
         self.save_models(file_Name, self.get_variables())
 
-    def cast_batch(self, batch):
+    def batch_cast(self, batch):
         if self.input_kw:
             x = tf.cast(batch[self.input_kw], dtype=tf.float32)/self.input_scale
         else:

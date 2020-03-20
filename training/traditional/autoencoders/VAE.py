@@ -79,7 +79,7 @@ class VAE(autoencoder):
         autoencoder.compile(self, **kwargs)
 
 
-    def cast_batch(self, batch):
+    def batch_cast(self, batch):
         if self.input_kw:
             x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
         else:
