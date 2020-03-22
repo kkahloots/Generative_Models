@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from graphs.builder import create_models, load_models
-from statistics.ae_losses import reconstuction_loss
+from statistical.ae_losses import reconstuction_loss
 
 def create_graph(name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params]  # ['inference',  'generative']

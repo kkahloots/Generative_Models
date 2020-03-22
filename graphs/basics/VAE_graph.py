@@ -1,7 +1,7 @@
 import tensorflow as tf
 from graphs.basics.AE_graph import create_variables
-from statistics.ae_losses import reconstuction_loss
-from statistics.pdfs import log_normal_pdf
+from statistical.ae_losses import reconstuction_loss
+from statistical.pdfs import log_normal_pdf
 
 # Graph
 def create_graph(name, variables_params, restore=None):
