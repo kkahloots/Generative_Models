@@ -11,6 +11,7 @@ class AAE(autoencoder):
             **kwargs
     ):
         self.strategy = strategy
+
         autoencoder.__init__(
             self,
             **kwargs
@@ -18,19 +19,39 @@ class AAE(autoencoder):
         self.ONES = tf.ones(shape=[self.batch_size, 1])
         self.ZEROS = tf.zeros(shape=[self.batch_size, 1])
 
-    def get_discriminators(self):
-        return {
-            'latent_discriminator_real': self.latent_discriminator_real,
-            'latent_discriminator_fake': self.latent_discriminator_fake,
-            'latent_generator_fake': self.latent_generator_fake
+        self.adversarial_models = {
+            'latent_discriminator_real':
+                {
+                    'variable': None,
+                    'adversarial_value': self.ONES
+                },
+            'latent_discriminator_fake':
+                {
+                    'variable': None,
+                    'adversarial_value': self.ZEROS
+                },
+            'latent_generator_fake':
+                {
+                    'variable': None,
+                    'adversarial_value': self.ONES
+                }
         }
+
+    # combined models special
+    def adversarial_get_variables(self):
+        return {**self.ae_get_variables(), **self.get_discriminators()}
+
+
+    def get_discriminators(self):
+        return {k: model['variable'] for k, model in self.adversarial_models}
+
+
 
     def latent_discriminator_real_batch_cast(self, batch):
         if self.input_kw:
             x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
         else:
             x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
         return {'generative_inputs': en['z_latent'],
                 'latent_discriminator_real_inputs': en['z_latent']
                 } ,\
@@ -394,6 +415,3 @@ class AAE(autoencoder):
 
         print(self.latent_generator_fake.summary())
 
-    # combined models special
-    def adversarial_get_variables(self):
-        return {**self.ae_get_variables(), **self.get_discriminators()}

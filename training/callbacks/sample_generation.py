@@ -25,7 +25,7 @@ class SampleGeneration(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         if epoch % self.gen_freq == 0:  # or save after some epoch, each k-th epoch etc.
-            generated = self.model.generate_sample(model=self.model.get_varibale,
+            generated = self.model.generate_sample(model=self.model.get_variable,
                                                    inputs_shape=self.model.inputs_shape,
                                                    latent_shape=[50, self.model.latent_dim],
                                                    eps=self.random_latent)

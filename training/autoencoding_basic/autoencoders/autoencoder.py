@@ -119,14 +119,14 @@ class autoencoder(tf.keras.Model):
             if inputs[k].shape == self.inputs_shape:
                 inputs[k] = tf.reshape(inputs[k], (1, ) + self.inputs_shape)
             inputs[k] = tf.cast(inputs[k], tf.float32)
-        kwargs['model']  = self.get_varibale
+        kwargs['model']  = self.get_variable
         kwargs['latent_shape'] = (self.batch_size, self.latent_dim)
         return self.encode_fn(**kwargs)
 
     def decode(self, latent):
-        return self.decode_fn(model=self.get_varibale, latent=latent, inputs_shape=self.inputs_shape)
+        return self.decode_fn(model=self.get_variable, latent=latent, inputs_shape=self.inputs_shape)
 
-    def get_varibale(self, var_name, param):
+    def get_variable(self, var_name, param):
         return self.get_variables()[var_name](*param)
 
     def save(self,
