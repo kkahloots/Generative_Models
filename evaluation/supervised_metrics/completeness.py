@@ -4,7 +4,7 @@ import numpy as np
 def completeness_per_factor(importance_matrix):
     """Compute supervised_metrics of each factor."""
     # importance_matrix is of shape [num_codes, num_factors].
-    return 1. - scipy.stats.entropy(importance_matrix + 1e-11,
+    return 1. - scipy.statisticsentropy(importance_matrix + 1e-11,
                                   base=importance_matrix.shape[0])
 
 def completeness(importance_matrix):

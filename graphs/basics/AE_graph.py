@@ -1,9 +1,7 @@
 import tensorflow as tf
 
 from graphs.builder import create_models, load_models
-from stats.ae_losses import reconstuction_loss
-
-LOSS_NAME= 'bce'
+from statistics.ae_losses import reconstuction_loss
 
 def create_graph(name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params]  # ['inference',  'generative']
@@ -18,7 +16,7 @@ def create_losses():
     return dict(zip(['x_logits'], [bce]))
 
 def bce(inputs, x_logits):
-    reconstruction_loss = reconstuction_loss(true_x=inputs, pred_x=x_logits)
+    reconstruction_loss = reconstuction_loss(x_true=inputs, x_logits=x_logits)
     Px_xreconst = tf.reduce_mean(-reconstruction_loss)
     return -Px_xreconst
 
@@ -35,17 +33,16 @@ def encode_fn(**kwargs):
     inputs = kwargs['inputs']
     z = model('inference', [inputs])
     return {
-        'x_latent': z
+        'z_latent': z
     }
 
 def decode_fn(model, latent, inputs_shape, apply_sigmoid=False):
     x_logits = model('generative', [latent])
     if apply_sigmoid:
         probs = tf.sigmoid(x_logits)
-        return tf.reshape(tensor=probs, shape=[-1] + [*inputs_shape], name='x_probs')
+        return tf.reshape(tensor=probs, shape=[-1] + [*inputs_shape], name='x_probablities')
     return tf.reshape(tensor=x_logits, shape=[-1] + [*inputs_shape], name='x_logits')
 
-@tf.function
 def generate_sample(model, inputs_shape, latent_shape, eps=None):
     if eps is None:
         eps = tf.random.normal(shape=latent_shape)
