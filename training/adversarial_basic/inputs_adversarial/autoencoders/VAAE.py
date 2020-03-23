@@ -257,11 +257,11 @@ class VAAE(autoencoder):
     def connect_together(self):
         self.get_variables = self.adversarial_get_variables
         self.encode_fn = inputs_discriminate_encode_fn
-        _inputs = {
+        inputs_dict = {
             'x_mean': self.get_variables()['inference_mean'].inputs[0],
             'x_logvar': self.get_variables()['encoder_logvar'].inputs[0]
         }
-        encoded = self.encode(inputs=_inputs)
+        encoded = self.encode(inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latent'])
 
         _outputs = {
@@ -271,8 +271,8 @@ class VAAE(autoencoder):
         }
         self._AA = tf.keras.Model(
             name='inputs_AA',
-            inputs= _inputs,
-            outputs=_outputs
+            inputs= inputs_dict,
+            outputs=_outputs_dict
         )
 
         for i, _output in enumerate(self._AA.output_names):

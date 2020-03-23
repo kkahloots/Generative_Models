@@ -1,10 +1,12 @@
+import logging
+import os
+
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-import numpy as np
-import os
-import logging
+
 from utils.reporting.logging import log_message
 from utils.swe.codes import properties, Layer_CD, Activate_CD, Messages_CD, Sampling_CD
+
 
 def create_layer(layer_cd, lay_dim, kernel_shape=None, addBatchNorm=True, addDropout=True, activate=None):
     assert layer_cd in properties(Layer_CD), Messages_CD.USV.format(layer_cd, 'Layers', properties(Layer_CD))
@@ -102,3 +104,20 @@ def create_models(variables_params):
 
 def run_variable(variable, param):
     return variable(*param)
+
+def layer_stuffing(model):
+    for layer in model.layers:
+        if not isinstance(layer, tf.keras.layers.Activation):
+            if hasattr(layer, 'activation'):
+                layer.activation = tf.keras.activations.elu
+
+def clone_model(old_model, new_name):
+    temp_layers = tf.keras.models.clone_model(old_model).layers
+    temp_layers.append(tf.keras.layers.Flatten())
+    temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name=new_name+'_outputs'))
+    temp_layers = tf.keras.Sequential(temp_layers)
+    return tf.keras.Model(
+        name=new_name,
+        inputs=temp_layers.inputs,
+        outputs=temp_layers.outputs
+    )

@@ -20,11 +20,11 @@ class VAE(autoencoder):
         # mean, logvar = self.encode(inputs)
         # z = reparametrize(mean, logvar)
         # connect the graph x' = decode(z)
-        _inputs = {
+        inputs_dict= {
             'x_mean': self.get_variables()['inference_mean'].inputs[0],
             'x_logvariance': self.get_variables()['inference_logvariance'].inputs[0]
         }
-        encoded = self.encode(inputs=_inputs)
+        encoded = self.encode(inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latent'])
 
         log_pdf = log_normal_pdf(
@@ -49,8 +49,8 @@ class VAE(autoencoder):
         tf.keras.Model.__init__(
             self,
             name=self.name,
-            inputs=_inputs,
-            outputs=_outputs,
+            inputs=inputs_dict,
+            outputs=_outputs_dict,
             **kwargs
         )
 

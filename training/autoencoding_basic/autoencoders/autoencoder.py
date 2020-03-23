@@ -42,16 +42,16 @@ class autoencoder(tf.keras.Model):
 
     def connect(self, **kwargs):
         # connect the graph x' = decode(encode(x))
-        _inputs = {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
-        latent = self.encode(inputs=_inputs)
+        inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
+        latent = self.encode(inputs=inputs_dict)
         x_logits = self.decode(latent)
         _outputs = [x_logits]
 
         tf.keras.Model.__init__(
             self,
             name=self.name,
-            inputs=_inputs,
-            outputs=_outputs,
+            inputs=inputs_dict,
+            outputs=_outputs_dict,
             **kwargs
         )
 
