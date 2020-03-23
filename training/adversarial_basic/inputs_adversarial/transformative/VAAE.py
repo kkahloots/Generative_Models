@@ -276,7 +276,7 @@ class VAAE(autoencoder):
         encoded = self.encode(inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latent'])
 
-        _outputs = {
+        outputs_dict = {
             'x_logits': x_logits,
             'inputs_discriminator_real_pred': encoded['inputs_discriminator_real_pred'],
             'inputs_discriminator_fake_pred': encoded['inputs_discriminator_fake_pred'],
@@ -286,17 +286,17 @@ class VAAE(autoencoder):
         self._AA = tf.keras.Model(
             name='inputs_AA',
             inputs= inputs_dict,
-            outputs=_outputs_dict
+            outputs=outputs_dict
         )
 
-        for i, _output in enumerate(self._AA.output_names):
-            if 'tf_op_layer_x_logits' in _output :
+        for i, output_dict in enumerate(self._AA.output_names):
+            if 'tf_op_layer_x_logits' in output_dict :
                 self._AA.output_names[i] = 'x_logits'
-            elif 'inputs_discriminator_fake' in _output :
+            elif 'inputs_discriminator_fake' in output_dict :
                 self._AA.output_names[i] = 'inputs_discriminator_fake_outputs'
-            elif 'inputs_generator_fake' in _output :
+            elif 'inputs_generator_fake' in output_dict :
                 self._AA.output_names[i] = 'inputs_generator_fake_outputs'
-            elif 'inputs_discriminator_real' in _output :
+            elif 'inputs_discriminator_real' in output_dict :
                 self._AA.output_names[i] = 'inputs_discriminator_real_outputs'
             else:
                 pass

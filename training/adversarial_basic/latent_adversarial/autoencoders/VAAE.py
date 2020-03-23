@@ -1,7 +1,10 @@
 import tensorflow as tf
-from training.callbacks.early_stopping import EarlyStopping
-from graphs.adversarial.AAE_graph import latent_discriminate_encode_fn
+
+from graphs.adversarial.VAAE_graph import latent_discriminate_encode_fn
+from graphs.builder import layer_stuffing, clone_model
+from statistical.pdfs import log_normal_pdf
 from training.autoencoding_basic.autoencoders.VAE import VAE as autoencoder
+from training.callbacks.early_stopping import EarlyStopping
 from utils.swe.codes import copy_fn
 
 
@@ -19,69 +22,49 @@ class VAAE(autoencoder):
         self.ONES = tf.ones(shape=[self.batch_size, 1])
         self.ZEROS = tf.zeros(shape=[self.batch_size, 1])
 
-    def get_discriminators(self):
-        return {
-            'latent_discriminator_real': self.latent_discriminator_real,
-            'latent_discriminator_fake': self.latent_discriminator_fake,
-            'latent_generator_fake': self.latent_generator_fake
+        self.adversarial_models = {
+            'latent_discriminator_real':
+                {
+                    'variable': None,
+                    'adversarial_item': 'generative',
+                    'adversarial_value': self.ONES
+                },
+            'latent_discriminator_fake':
+                {
+                    'variable': None,
+                    'adversarial_item': 'generative',
+                    'adversarial_value': self.ZEROS
+                },
+            'latent_generator_fake':
+                {
+                    'variable': None,
+                    'adversarial_item': 'generative',
+                    'adversarial_value': self.ONES
+                }
         }
 
+    # combined models special
+    def adversarial_get_variables(self):
+        return {**self.ae_get_variables(), **self.get_discriminators()}
 
-    def latent_discriminator_real_batch_cast(self, batch):
-        if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
-        else:
-            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
-        return {'generative_inputs': en['z_latent'],
-                'latent_discriminator_real_inputs': en['z_latent']
-                } ,\
-               {
-                   'latent_discriminator_real_outputs': self.ONES
-               }
 
-    def latent_discriminator_fake_batch_cast(self, batch):
-        if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
-        else:
-            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
-        return {'generative_inputs': en['z_latent'],
-                'latent_discriminator_fake_inputs': en['z_latent']
-                } ,\
-               {
-                   'latent_discriminator_fake_outputs': self.ZEROS
-               }
+    def get_discriminators(self):
+        return {k: model['variable'] for k, model in self.adversarial_models.items()}
 
-    def latent_generator_fake_batch_cast(self, batch):
-        if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
-        else:
-            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
-        return {'generative_inputs': en['z_latent'],
-                'latent_generator_fake_inputs': en['z_latent']
-                } ,\
-               {
-                   'latent_generator_fake_outputs': self.ONES
-               }
+    def create_batch_cast(self, models):
+        def batch_cast_fn(batch):
+            if self.input_kw:
+                x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
+            else:
+                x = tf.cast(batch, dtype=tf.float32) / self.input_scale
+            outputs_dict =  {k: model['adversarial_value'] for k, model in models.items()}
+            outputs_dict = {'x_logits': x, **outputs_dict}
 
-    def together_batch_cast(self, batch):
-        if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
-        else:
-            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-        en = autoencoder.encode(self, inputs={'inputs': x})
-        return {   'inference_inputs': x,
-                   'generative_inputs': en['z_latent']} ,\
-               {
-                   'x_logits': x,
-                   'latent_discriminator_real_outputs': self.ONES ,
-                   'latent_discriminator_fake_outputs': self.ZEROS,
-                   'latent_generator_fake_outputs': self.ONES
+            return {'inference_mean_inputs': x, 'inference_logvariance_inputs': x },outputs_dict
 
-               }
-    
+        return batch_cast_fn
+
+
     def compile(
             self,
             adversarial_losses,
@@ -94,92 +77,37 @@ class VAAE(autoencoder):
             self,
             **kwargs
         )
-        
+
     def fit(
             self,
             x,
-            y=None,
-            input_kw='image',
-            input_scale=1.0,
-            steps_per_epoch=None,
-            epochs=1,
-            verbose=1,
-            callbacks=None,
             validation_data=None,
-            validation_steps=None,
-            validation_freq=1,
-            class_weight=None,
-            max_queue_size=10,
-            workers=1,
-            use_multiprocessing=False,
-            shuffle=True,
-            initial_epoch=0
+            **kwargs
     ):
+        print()
+        print(f'training {autoencoder}')
         # 1- train the basic basicAE
         autoencoder.fit(
             self,
             x=x,
-            y=y,
-            input_kw=input_kw,
-            input_scale=input_scale,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
-            verbose=verbose,
-            callbacks=callbacks,
-            validation_data=validation_data,
-            validation_steps=validation_steps,
-            validation_freq=validation_freq,
-            class_weight=class_weight,
-            max_queue_size=max_queue_size,
-            workers=workers,
-            use_multiprocessing=use_multiprocessing,
-            shuffle=shuffle,
-            initial_epoch=initial_epoch
+            validation_data=validation_data
+            **kwargs
         )
 
-        def create_latent_discriminator():
-            for k, var in self.get_variables().items():
-                for layer in var.layers:
-                    if not isinstance(layer, tf.keras.layers.Activation):
-                        if hasattr(layer, 'activation'):
-                            layer.activation = tf.keras.activations.elu
 
-            temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
-            temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='latent_discriminator_real_outputs'))
-            temp_layers = tf.keras.Sequential(temp_layers)
-            self.latent_discriminator_real = tf.keras.Model(
-                name='latent_discriminator_real',
-                inputs=temp_layers.inputs,
-                outputs=temp_layers.outputs
-            )
+        def create_discriminator():
+            for model in self.get_variables().values():
+                layer_stuffing(model)
 
-            temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
-            temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='latent_discriminator_fake_outputs'))
-            temp_layers = tf.keras.Sequential(temp_layers)
-            self.latent_discriminator_fake = tf.keras.Model(
-                name='latent_discriminator_fake',
-                inputs=temp_layers.inputs,
-                outputs=temp_layers.outputs
-            )
-
-            temp_layers = tf.keras.models.clone_model(self.get_variables()['generative']).layers
-            temp_layers.append(tf.keras.layers.Flatten())
-            temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name='latent_generator_fake_outputs'))
-            temp_layers = tf.keras.Sequential(temp_layers)
-            self.latent_generator_fake = tf.keras.Model(
-                name='latent_generator_fake',
-                inputs=temp_layers.inputs,
-                outputs=temp_layers.outputs
-            )
+            for k, model in self.adversarial_models.items():
+                model['variable'] = clone_model(old_model=self.get_variables()[model['adversarial_item']], restore=self.filepath)
 
         # 2- create a latent discriminator
         if self.strategy:
             with self.strategy:
-                create_latent_discriminator()
+                create_discriminator()
         else:
-            create_latent_discriminator()
+            create_discriminator()
 
         # 3- clone autoencoder variables
         self.ae_get_variables = copy_fn(self.get_variables)
@@ -187,167 +115,143 @@ class VAAE(autoencoder):
         # 4- switch to discriminate
         if self.strategy:
             if self.strategy:
-                self.latent_discriminator_compile()
+                self.discriminators_compile()
         else:
-            self.latent_discriminator_compile()
+            self.discriminators_compile()
 
-        # 5- train the latent discriminator
-        self.latent_discriminator_real.fit(
-            x=x.map(self.latent_discriminator_real_batch_cast),
-            y=y,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
-            verbose=1,
-            callbacks=[EarlyStopping()],
-            validation_data=validation_data.map(self.latent_discriminator_real_batch_cast),
-            validation_steps=validation_steps,
-            validation_freq=validation_freq,
-            class_weight=class_weight,
-            max_queue_size=max_queue_size,
-            workers=workers,
-            use_multiprocessing=use_multiprocessing,
-            shuffle=shuffle,
-            initial_epoch=initial_epoch
-        )
+        verbose = kwargs['verbose']
+        callbacks = kwargs['callbacks']
 
-        self.latent_discriminator_fake.fit(
-            x=x.map(self.latent_discriminator_fake_batch_cast),
-            y=y,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
-            verbose=1,
-            callbacks=[EarlyStopping()],
-            validation_data=validation_data.map(self.latent_discriminator_fake_batch_cast),
-            validation_steps=validation_steps,
-            validation_freq=validation_freq,
-            class_weight=class_weight,
-            max_queue_size=max_queue_size,
-            workers=workers,
-            use_multiprocessing=use_multiprocessing,
-            shuffle=shuffle,
-            initial_epoch=initial_epoch
-        )
+        for k, model in self.adversarial_models.items():
+            print()
+            print(f'training {k}')
+            # 5- train the latent discriminator
+            model['variables'].fit(
+                x=x.map(self.create_batch_cast({k: model})),
+                validation_data=None if validation_data is None else validation_data.map(self.create_batch_cast({k: model})),
+                callbacks=[EarlyStopping()],
+                verbose=1,
+                **kwargs
+            )
 
-        self.latent_generator_fake.fit(
-            x=x.map(self.latent_generator_fake_batch_cast),
-            y=y,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
-            verbose=1,
-            callbacks=[EarlyStopping()],
-            validation_data=validation_data.map(self.latent_generator_fake_batch_cast),
-            validation_steps=validation_steps,
-            validation_freq=validation_freq,
-            class_weight=class_weight,
-            max_queue_size=max_queue_size,
-            workers=workers,
-            use_multiprocessing=use_multiprocessing,
-            shuffle=shuffle,
-            initial_epoch=initial_epoch
-        )
+        kwargs['verbose'] = verbose
+        kwargs['callbacks'] = callbacks
 
         # 6- connect all for latent_adversarial training
         if self.strategy:
             if self.strategy:
-                self.connect_together()
+                self.connect_models()
         else:
-            self.connect_together()
+            self.connect_models()
+
+        print()
+        print('training adversarial models')
+        cbs = [cb for cb in callbacks or [] if isinstance(cb, tf.keras.callbacks.CSVLogger)]
+        for cb in cbs:
+            cb.filename = cb.filename.split('.csv')[0] + '_together.csv'
+            mertic_names = [fn for sublist in [[k + '_' + fn.__name__ for fn in v] for k, v in self.ae_metrics.items()]
+                            for fn in sublist]
+            cb.keys = ['loss'] + [fn+'_loss' for fn in self._AA.output_names] + mertic_names
+            cb.append_header = cb.keys
 
         # 7- training together
         self._AA.fit(
-            x=x.map(self.together_batch_cast),
-            y=y,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
-            verbose=verbose,
-            callbacks=callbacks,
-            validation_data=validation_data.map(self.together_batch_cast),
-            validation_steps=validation_steps,
-            validation_freq=validation_freq,
-            class_weight=class_weight,
-            max_queue_size=max_queue_size,
-            workers=workers,
-            use_multiprocessing=use_multiprocessing,
-            shuffle=shuffle,
-            initial_epoch=initial_epoch
+            x=x.map(self.create_batch_cast({k: model})),
+            validation_data=None if validation_data is None else validation_data.map(
+                self.create_batch_cast({k: model})),
+            **kwargs
         )
 
-
-    def connect_together(self):
+    def connect_models(self):
         self.get_variables = self.adversarial_get_variables
         self.encode_fn = latent_discriminate_encode_fn
         inputs_dict= {
-            'inputs': self.get_variables()['inference'].inputs[0]
+            'x_mean': self.get_variables()['inference_mean'].inputs[0],
+            'x_logvariance': self.get_variables()['inference_logvariance'].inputs[0]
         }
         encoded = self.encode(inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latent'])
 
-        _outputs = {
-            'x_logits': x_logits,
-            'latent_discriminator_real_pred': encoded['latent_discriminator_real_pred'],
-            'latent_discriminator_fake_pred': encoded['latent_discriminator_fake_pred'],
-            'latent_generator_fake_pred': encoded['latent_generator_fake_pred']
-        }
-        self._AA = tf.keras.Model(
-            name='latent_AA',
-            inputs= inputs_dict,
-            outputs=_outputs_dict
+        log_pdf = log_normal_pdf(
+            sample=encoded['z_latent'],
+            mean=encoded['inference_mean'],
+            logvariance=encoded['inference_logvariance']
         )
 
-        for i, _output in enumerate(self._AA.output_names):
-            if 'tf_op_layer_x_logits' in _output :
-                self._AA.output_names[i] = 'x_logits'
-            elif 'latent_discriminator_fake' in _output :
-                self._AA.output_names[i] = 'latent_discriminator_fake_outputs'
-            elif 'latent_generator_fake' in _output :
-                self._AA.output_names[i] = 'latent_generator_fake_outputs'
-            elif 'latent_discriminator_real' in _output :
-                self._AA.output_names[i] = 'latent_discriminator_real_outputs'
+
+        outputs_dict = {k+'_predictions': encoded[k+'_predictions'] for k in self.adversarial_models.keys()}
+        outputs_dict = {
+            'x_logits': x_logits,
+            'z_latent': encoded['z_latent'],
+            'inference_mean': encoded['inference_mean'],
+            'inference_logvariance': encoded['inference_logvariance'],
+            'log_pdf': log_pdf,
+            **outputs_dict
+        }
+
+        self._AA = tf.keras.Model(
+            name='adverasarial_model',
+            inputs= inputs_dict,
+            outputs=outputs_dict,
+        )
+
+        for i, output_dict in enumerate(self.output_names):
+            if 'log_pdf' in output_dict:
+                self.output_names[i] = 'x_log_pdf'
+            elif 'z_latent' in output_dict:
+                self.output_names[i] = 'z_latent'
+            elif 'x_logits' in output_dict:
+                self.output_names[i] = 'x_logits'
+            elif 'logvariance' in output_dict:
+                self.output_names[i] = 'inference_logvariance'
+            elif 'inference_mean' in output_dict:
+                self.output_names[i] = 'inference_mean'
             else:
                 pass
+            for k in self.adversarial_models.keys():
+                if k in outputs_dict:
+                    self._AA.output_names[i] = k+'_outputs'
 
         generator_weight = self.adversarial_weights['generator_weight']
         discriminator_weight = self.adversarial_weights['discriminator_weight']
         generator_losses = [k for k in self.adversarial_losses.keys() if 'generator' in k]
-        glen = len(self.ae_losses)+len(generator_losses)
         dlen = len(self.adversarial_losses)-len(generator_losses)
-        aeloss_weights = {k: (1-generator_weight)/glen for k in self.ae_losses.keys()}
-        gloss_weights = {k: generator_weight/glen for k in generator_losses}
-        discriminator_weights = {k: (1 - discriminator_weight)/dlen for k in self.adversarial_losses.keys() if k not in generator_losses}
+        aeloss_weights = {k: (1-discriminator_weight)*(1-generator_weight)/len(self.ae_losses) for k in self.ae_losses.keys()}
+        gloss_weights = {k: (1-discriminator_weight)*(generator_weight)/len(generator_losses) for k in generator_losses}
+        discriminator_weights = {k:  discriminator_weight/dlen for k in self.adversarial_losses.keys() if k not in generator_losses}
         self._AA.compile(
             optimizer=self.optimizer,
             loss={**self.ae_losses, **self.adversarial_losses},
             metrics=self.ae_metrics,
             loss_weights={**aeloss_weights, **gloss_weights, **discriminator_weights}
         )
+
+        self._AA.generate_sample = self.generate_sample
+        self._AA.get_variable = self.get_variable
+        self._AA.inputs_shape = self.inputs_shape
+        self._AA.latent_dim = self.latent_dim
+
         print(self._AA.summary())
 
-    def latent_discriminator_compile(self, **kwargs):
-        self.latent_discriminator_real.compile(
-            optimizer=self.optimizer,
-            loss=self.adversarial_losses['latent_discriminator_real_outputs'](),
-            metrics=None
+    def compile(
+            self,
+            adversarial_losses,
+            adversarial_weights,
+            **kwargs
+    ):
+        self.adversarial_losses=adversarial_losses
+        self.adversarial_weights=adversarial_weights
+        autoencoder.compile(
+            self,
+            **kwargs
         )
 
-        print(self.latent_discriminator_real.summary())
+    def discriminators_compile(self, **kwargs):
+        for k, model in self.adversarial_models.items():
+            model['variable'].compile(
+                optimizer=self.optimizer,
+                loss=self.adversarial_losses[k+'_outputs']()
+            )
 
-        self.latent_discriminator_fake.compile(
-            optimizer=self.optimizer,
-            loss=self.adversarial_losses['latent_discriminator_fake_outputs'](),
-            metrics=None
-        )
-
-        print(self.latent_discriminator_fake.summary())
-
-        self.latent_generator_fake.compile(
-            optimizer=self.optimizer,
-            loss=self.adversarial_losses['latent_generator_fake_outputs'](),
-            metrics=None
-        )
-
-        print(self.latent_generator_fake.summary())
-
-    # combined models special
-    def adversarial_get_variables(self):
-        return {**self.ae_get_variables(), **self.get_discriminators()}
+            print(model['variable'].summary())
 

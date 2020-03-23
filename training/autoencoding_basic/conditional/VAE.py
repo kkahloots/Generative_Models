@@ -30,6 +30,6 @@ class VAE(autoencoder):
     def call(self, inputs):
         X = inputs[0]
         y = inputs[1]
-        z, mean, logvar = self.encode(X)
+        z, mean, logvariance = self.encode(X)
         x_logit = self.decode(tf.concat[z, y])
-        return {'x_logit': x_logit, 'latent': z, 'mean': mean, 'logvar':logvar}
+        return {'x_logit': x_logit, 'latent': z, 'mean': mean, 'logvariance':logvariance}

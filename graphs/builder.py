@@ -86,13 +86,13 @@ def save_models(file_name, variables):
 
 def load_models(file_name, variables_names):
     log_message('Restore old models ...', logging.DEBUG)
-    vars = []
+    variables = []
     for name in variables_names:
-        var = os.path.join(file_name, name+'.hdf5')
-        variable = load_model(var, compile=False)
-        vars += [variable]
+        variable_path = os.path.join(file_name, name+'.hdf5')
+        variable = load_model(variable_path, compile=False)
+        variables += [variable]
         log_message(variable.summary(), logging.WARN)
-    return vars
+    return variables
 
 def create_models(variables_params):
     vars = []
@@ -111,13 +111,20 @@ def layer_stuffing(model):
             if hasattr(layer, 'activation'):
                 layer.activation = tf.keras.activations.elu
 
-def clone_model(old_model, new_name):
-    temp_layers = tf.keras.models.clone_model(old_model).layers
-    temp_layers.append(tf.keras.layers.Flatten())
-    temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name=new_name+'_outputs'))
-    temp_layers = tf.keras.Sequential(temp_layers)
-    return tf.keras.Model(
-        name=new_name,
-        inputs=temp_layers.inputs,
-        outputs=temp_layers.outputs
-    )
+def clone_model(old_model, new_name, restore=None):
+    if restore:
+        log_message('Restore old models ...', logging.DEBUG)
+        variable_path = os.path.join(restore, new_name+'.hdf5')
+        variable = load_model(variable_path, compile=False)
+
+    else:
+        temp_layers = tf.keras.models.clone_model(old_model).layers
+        temp_layers.append(tf.keras.layers.Flatten())
+        temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name=new_name+'_outputs'))
+        temp_layers = tf.keras.Sequential(temp_layers)
+        variable = tf.keras.Model(
+            name=new_name,
+            inputs=temp_layers.inputs,
+            outputs=temp_layers.outputs
+        )
+    return variable

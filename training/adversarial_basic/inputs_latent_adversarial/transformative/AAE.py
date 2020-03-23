@@ -450,35 +450,35 @@ class AAE(autoencoder):
         encoded = self.encode(inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latent'])
 
-        _outputs = {
+        outputs_dict = {
             'x_logits': x_logits,
             'inputs_discriminator_real_pred': encoded['inputs_discriminator_real_pred'],
             'inputs_discriminator_fake_pred': encoded['inputs_discriminator_fake_pred'],
             'inputs_generator_fake_pred': encoded['inputs_generator_fake_pred'],
-            'latent_discriminator_real_pred': encoded['latent_discriminator_real_pred'],
-            'latent_discriminator_fake_pred': encoded['latent_discriminator_fake_pred'],
-            'latent_generator_fake_pred': encoded['latent_generator_fake_pred']
+            'latent_discriminator_real_preditions': encoded['latent_discriminator_real_preditions'],
+            'latent_discriminator_fake_preditions': encoded['latent_discriminator_fake_preditions'],
+            'latent_generator_fake_predition': encoded['latent_generator_fake_predition']
         }
         self._AA = tf.keras.Model(
             name='inputs_latent_AA',
             inputs= inputs_dict,
-            outputs=_outputs_dict
+            outputs=outputs_dict
         )
 
-        for i, _output in enumerate(self._AA.output_names):
-            if 'tf_op_layer_x_logits' in _output :
+        for i, output_dict in enumerate(self._AA.output_names):
+            if 'tf_op_layer_x_logits' in output_dict :
                 self._AA.output_names[i] = 'x_logits'
-            elif 'inputs_discriminator_fake' in _output :
+            elif 'inputs_discriminator_fake' in output_dict :
                 self._AA.output_names[i] = 'inputs_discriminator_fake_outputs'
-            elif 'inputs_generator_fake' in _output :
+            elif 'inputs_generator_fake' in output_dict :
                 self._AA.output_names[i] = 'inputs_generator_fake_outputs'
-            elif 'inputs_discriminator_real' in _output :
+            elif 'inputs_discriminator_real' in output_dict :
                 self._AA.output_names[i] = 'inputs_discriminator_real_outputs'
-            elif 'latent_discriminator_fake' in _output:
+            elif 'latent_discriminator_fake' in output_dict:
                 self._AA.output_names[i] = 'latent_discriminator_fake_outputs'
-            elif 'latent_generator_fake' in _output:
+            elif 'latent_generator_fake' in output_dict:
                 self._AA.output_names[i] = 'latent_generator_fake_outputs'
-            elif 'latent_discriminator_real' in _output:
+            elif 'latent_discriminator_real' in output_dict:
                 self._AA.output_names[i] = 'latent_discriminator_real_outputs'
             else:
                 pass

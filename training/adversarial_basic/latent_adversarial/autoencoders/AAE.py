@@ -14,7 +14,6 @@ class AAE(autoencoder):
             **kwargs
     ):
         self.strategy = strategy
-        self.parent = autoencoder
         autoencoder.__init__(
             self,
             **kwargs
@@ -73,7 +72,7 @@ class AAE(autoencoder):
     ):
         self.adversarial_losses=adversarial_losses
         self.adversarial_weights=adversarial_weights
-        self.parent.compile(
+        autoencoder.compile(
             self,
             **kwargs
         )
@@ -85,9 +84,9 @@ class AAE(autoencoder):
             **kwargs
     ):
         print()
-        print(f'training {self.parent}')
+        print(f'training {autoencoder}')
         # 1- train the basic basicAE
-        self.parent.fit(
+        autoencoder.fit(
             self,
             x=x,
             validation_data=validation_data
@@ -100,7 +99,7 @@ class AAE(autoencoder):
                 layer_stuffing(model)
 
             for k, model in self.adversarial_models.items():
-                model['variable'] = clone_model(old_model=self.get_variables()[model['adversarial_item']])
+                model['variable'] = clone_model(old_model=self.get_variables()[model['adversarial_item']], restore=self.filepath)
 
         # 2- create a latent discriminator
         if self.strategy:
@@ -135,7 +134,6 @@ class AAE(autoencoder):
             )
 
         kwargs['verbose'] = verbose
-
         kwargs['callbacks'] = callbacks
 
         # 6- connect all for latent_adversarial training
@@ -181,26 +179,20 @@ class AAE(autoencoder):
             outputs=outputs_dict
         )
 
-        for i, _output in enumerate(self._AA.output_names):
-            if 'tf_op_layer_x_logits' in _output :
+        for i, outputs_dict in enumerate(self._AA.output_names):
+            if 'x_logits' in outputs_dict:
                 self._AA.output_names[i] = 'x_logits'
-            elif 'latent_discriminator_fake' in _output :
-                self._AA.output_names[i] = 'latent_discriminator_fake_outputs'
-            elif 'latent_generator_fake' in _output :
-                self._AA.output_names[i] = 'latent_generator_fake_outputs'
-            elif 'latent_discriminator_real' in _output :
-                self._AA.output_names[i] = 'latent_discriminator_real_outputs'
-            else:
-                pass
+            for k in self.adversarial_models.keys():
+                if k in outputs_dict:
+                    self._AA.output_names[i] = k+'_outputs'
 
         generator_weight = self.adversarial_weights['generator_weight']
         discriminator_weight = self.adversarial_weights['discriminator_weight']
         generator_losses = [k for k in self.adversarial_losses.keys() if 'generator' in k]
-        glen = len(self.ae_losses)+len(generator_losses)
         dlen = len(self.adversarial_losses)-len(generator_losses)
-        aeloss_weights = {k: (1-generator_weight)/glen for k in self.ae_losses.keys()}
-        gloss_weights = {k: generator_weight/glen for k in generator_losses}
-        discriminator_weights = {k: (1 - discriminator_weight)/dlen for k in self.adversarial_losses.keys() if k not in generator_losses}
+        aeloss_weights = {k: (1-discriminator_weight)*(1-generator_weight)/len(self.ae_losses) for k in self.ae_losses.keys()}
+        gloss_weights = {k: (1-discriminator_weight)*(generator_weight)/len(generator_losses) for k in generator_losses}
+        discriminator_weights = {k:  discriminator_weight/dlen for k in self.adversarial_losses.keys() if k not in generator_losses}
         self._AA.compile(
             optimizer=self.optimizer,
             loss={**self.ae_losses, **self.adversarial_losses},
@@ -209,7 +201,7 @@ class AAE(autoencoder):
         )
 
         self._AA.generate_sample = self.generate_sample
-        self._AA.get_varibale = self.get_varibale
+        self._AA.get_variable = self.get_variable
         self._AA.inputs_shape = self.inputs_shape
         self._AA.latent_dim = self.latent_dim
 

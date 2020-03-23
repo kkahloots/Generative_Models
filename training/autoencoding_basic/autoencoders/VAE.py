@@ -17,8 +17,8 @@ class VAE(autoencoder):
         )
 
     def connect(self, **kwargs):
-        # mean, logvar = self.encode(inputs)
-        # z = reparametrize(mean, logvar)
+        # mean, logvariance = self.encode(inputs)
+        # z = reparametrize(mean, logvariance)
         # connect the graph x' = decode(z)
         inputs_dict= {
             'x_mean': self.get_variables()['inference_mean'].inputs[0],
@@ -38,7 +38,7 @@ class VAE(autoencoder):
         encoded['z_latent']._name = 'z_latent'
         encoded['inference_mean']._name = 'inference_mean'
         encoded['inference_logvariance']._name = 'inference_logvariance'
-        _outputs = {
+        outputs_dict = {
             'x_logits': x_logits,
             'z_latent': encoded['z_latent'],
             'inference_mean': encoded['inference_mean'],
@@ -50,22 +50,22 @@ class VAE(autoencoder):
             self,
             name=self.name,
             inputs=inputs_dict,
-            outputs=_outputs_dict,
+            outputs=outputs_dict,
             **kwargs
         )
 
     def outputs_renaming_fn(self):
         ## rename the outputs
-        for i, _output in enumerate(self.output_names):
-            if 'log_pdf' in _output:
+        for i, output_dict in enumerate(self.output_names):
+            if 'log_pdf' in output_dict:
                 self.output_names[i] = 'x_log_pdf'
-            elif 'z_latent' in _output:
+            elif 'z_latent' in output_dict:
                 self.output_names[i] = 'z_latent'
-            elif 'x_logits' in _output:
+            elif 'x_logits' in output_dict:
                 self.output_names[i] = 'x_logits'
-            elif 'logvariance' in _output:
+            elif 'logvariance' in output_dict:
                 self.output_names[i] = 'inference_logvariance'
-            elif 'inference_mean' in _output:
+            elif 'inference_mean' in output_dict:
                 self.output_names[i] = 'inference_mean'
             else:
                 pass

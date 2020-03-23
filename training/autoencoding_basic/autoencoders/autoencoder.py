@@ -27,6 +27,7 @@ class autoencoder(tf.keras.Model):
             variables_params=variables_params,
             restore=filepath
         )
+        self.filepath = filepath
         self._name = name
         self.inputs_shape = inputs_shape
         self.outputs_shape = outputs_shape
@@ -51,7 +52,7 @@ class autoencoder(tf.keras.Model):
             self,
             name=self.name,
             inputs=inputs_dict,
-            outputs=_outputs_dict,
+            outputs=outputs_dict,
             **kwargs
         )
 
