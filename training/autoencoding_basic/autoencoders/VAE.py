@@ -72,9 +72,11 @@ class VAE(autoencoder):
 
     def compile(
             self,
+            loss=None,
             **kwargs
     ):
-        kwargs['loss'] = create_losses()
+        loss = loss or {}
+        kwargs['loss'] = {**create_losses(), **loss}
         autoencoder.compile(self, **kwargs)
 
 

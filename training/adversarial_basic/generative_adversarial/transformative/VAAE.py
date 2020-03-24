@@ -1,13 +1,14 @@
 import tensorflow as tf
 
-from graphs.adversarial.AAE_graph import latent_discriminate_encode_fn
+from graphs.adversarial.VAAE_graph import generative_discriminate_encode_fn
 from graphs.builder import layer_stuffing, clone_model
-from training.autoencoding_basic.autoencoders.autoencoder import autoencoder
+from statistical.pdfs import log_normal_pdf
+from training.autoencoding_basic.transformative.VAE import VAE as autoencoder
 from training.callbacks.early_stopping import EarlyStopping
 from utils.swe.codes import copy_fn
 
 
-class AAE(autoencoder):
+class VAAE(autoencoder):
     def __init__(
             self,
             strategy=None,
@@ -22,22 +23,22 @@ class AAE(autoencoder):
         self.ZEROS = tf.zeros(shape=[self.batch_size, 1])
 
         self.adversarial_models = {
-            'latent_discriminator_real':
+            'generative_discriminator_real':
                 {
                     'variable': None,
-                    'adversarial_item': 'generative',
+                    'adversarial_item': 'inference',
                     'adversarial_value': self.ONES
                 },
-            'latent_discriminator_fake':
+            'generative_discriminator_fake':
                 {
                     'variable': None,
-                    'adversarial_item': 'generative',
+                    'adversarial_item': 'inference',
                     'adversarial_value': self.ZEROS
                 },
-            'latent_generator_fake':
+            'inference_generator_fake':
                 {
                     'variable': None,
-                    'adversarial_item': 'generative',
+                    'adversarial_item': 'inference',
                     'adversarial_value': self.ONES
                 }
         }
@@ -59,7 +60,7 @@ class AAE(autoencoder):
             outputs_dict =  {k: model['adversarial_value'] for k, model in models.items()}
             outputs_dict = {'x_logits': x, **outputs_dict}
 
-            return {'inference_inputs': x },outputs_dict
+            return {'inference_mean_inputs': x, 'inference_logvariance_inputs': x },outputs_dict
 
         return batch_cast_fn
 
@@ -136,7 +137,7 @@ class AAE(autoencoder):
         kwargs['verbose'] = verbose
         kwargs['callbacks'] = callbacks
 
-        # 6- connect all for latent_adversarial training
+        # 6- connect all for inference_adversarial training
         if self.strategy:
             if self.strategy:
                 self.connect_models()
@@ -163,25 +164,49 @@ class AAE(autoencoder):
 
     def connect_models(self):
         self.get_variables = self.adversarial_get_variables
-        self.encode_fn = latent_discriminate_encode_fn
+        self.encode_fn = generative_discriminate_encode_fn
         inputs_dict= {
-            'inputs': self.get_variables()['inference'].inputs[0]
+            'x_mean': self.get_variables()['inference_mean'].inputs[0],
+            'x_logvariance': self.get_variables()['inference_logvariance'].inputs[0]
         }
         encoded = self.encode(inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latent'])
 
+        log_pdf = log_normal_pdf(
+            sample=encoded['z_latent'],
+            mean=encoded['inference_mean'],
+            logvariance=encoded['inference_logvariance']
+        )
+
         outputs_dict = {k+'_predictions': encoded[k+'_predictions'] for k in self.adversarial_models.keys()}
-        outputs_dict = {'x_logits': x_logits, **outputs_dict}
+        outputs_dict = {
+            'x_logits': x_logits,
+            'z_latent': encoded['z_latent'],
+            'inference_mean': encoded['inference_mean'],
+            'inference_logvariance': encoded['inference_logvariance'],
+            'log_pdf': log_pdf,
+            **outputs_dict
+        }
 
         self._AA = tf.keras.Model(
             name='adverasarial_model',
             inputs= inputs_dict,
-            outputs=outputs_dict
+            outputs=outputs_dict,
         )
 
-        for i, outputs_dict in enumerate(self._AA.output_names):
-            if 'x_logits' in outputs_dict:
-                self._AA.output_names[i] = 'x_logits'
+        for i, output_dict in enumerate(self.output_names):
+            if 'log_pdf' in output_dict:
+                self.output_names[i] = 'x_log_pdf'
+            elif 'z_latent' in output_dict:
+                self.output_names[i] = 'z_latent'
+            elif 'x_logits' in output_dict:
+                self.output_names[i] = 'x_logits'
+            elif 'logvariance' in output_dict:
+                self.output_names[i] = 'inference_logvariance'
+            elif 'inference_mean' in output_dict:
+                self.output_names[i] = 'inference_mean'
+            else:
+                pass
             for k in self.adversarial_models.keys():
                 if k in outputs_dict:
                     self._AA.output_names[i] = k+'_outputs'

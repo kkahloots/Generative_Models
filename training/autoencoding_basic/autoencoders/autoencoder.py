@@ -46,7 +46,7 @@ class autoencoder(tf.keras.Model):
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
         latent = self.encode(inputs=inputs_dict)
         x_logits = self.decode(latent)
-        _outputs = [x_logits]
+        outputs_dict =  [x_logits]
 
         tf.keras.Model.__init__(
             self,
@@ -63,13 +63,15 @@ class autoencoder(tf.keras.Model):
     def compile(
             self,
             optimizer=RAdam(),
-            loss=create_losses(),
+            loss=None,
             metrics=create_metrics(),
             **kwargs
     ):
         self.ae_losses = create_losses()
+        loss = loss or {}
+        model_losses = {**self.ae_losses, **loss}
         self.ae_metrics = metrics
-        tf.keras.Model.compile(self, optimizer=optimizer, loss=loss, metrics=metrics, **kwargs)
+        tf.keras.Model.compile(self, optimizer=optimizer, loss=model_losses, metrics=metrics, **kwargs)
         print(self.summary())
 
     def fit(
