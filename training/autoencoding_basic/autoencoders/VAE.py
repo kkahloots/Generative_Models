@@ -75,8 +75,11 @@ class VAE(autoencoder):
             loss=None,
             **kwargs
     ):
+        ae_losses = create_losses()
         loss = loss or {}
-        kwargs['loss'] = {**create_losses(), **loss}
+        for k in loss:
+            ae_losses.pop(k)
+        self.ae_losses = {**ae_losses, **loss}
         autoencoder.compile(self, **kwargs)
 
 
