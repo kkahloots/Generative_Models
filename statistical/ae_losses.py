@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-def reconstuction_loss(x_true, x_logits):
+def expected_loglikelihood(x_true, x_logits):
     """expected log-likelihood of the lower bound. For this we use a bernouilli lower bound
     Computes the Bernoulli loss."""
     # Because true images are not binary, the lower bound in the xent is not zero:

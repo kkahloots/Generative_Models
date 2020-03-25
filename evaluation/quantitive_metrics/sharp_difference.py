@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 from evaluation.shared import log10
 
-@tf.function
-def sharp_diff(inputs, x_logits):
+#@tf.function
+def sharpdiff(inputs, x_logits):
     """
     Computes the Sharpness Difference error between the generated images and the ground truth
     images.

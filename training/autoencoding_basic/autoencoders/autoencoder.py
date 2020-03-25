@@ -73,7 +73,7 @@ class autoencoder(tf.keras.Model):
             ae_losses.pop(k)
         self.ae_losses = {**ae_losses, **loss}
         self.ae_metrics = metrics
-        tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=metrics, **kwargs)
+        tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
 
     def fit(

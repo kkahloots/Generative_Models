@@ -172,7 +172,7 @@ class VAAE(autoencoder):
         encoded = self.encode(inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latent'])
 
-        log_pdf = log_normal_pdf(
+        logpdf = log_normal_pdf(
             sample=encoded['z_latent'],
             mean=encoded['inference_mean'],
             logvariance=encoded['inference_logvariance']
@@ -185,7 +185,7 @@ class VAAE(autoencoder):
             'z_latent': encoded['z_latent'],
             'inference_mean': encoded['inference_mean'],
             'inference_logvariance': encoded['inference_logvariance'],
-            'log_pdf': log_pdf,
+            'logpdf': logpdf,
             **outputs_dict
         }
 
@@ -196,8 +196,8 @@ class VAAE(autoencoder):
         )
 
         for i, output_dict in enumerate(self.output_names):
-            if 'log_pdf' in output_dict:
-                self.output_names[i] = 'x_log_pdf'
+            if 'logpdf' in output_dict:
+                self.output_names[i] = 'x_logpdf'
             elif 'z_latent' in output_dict:
                 self.output_names[i] = 'z_latent'
             elif 'x_logits' in output_dict:

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from graphs.basics.AE_graph import create_variables
-from statistical.ae_losses import reconstuction_loss
+from statistical.ae_losses import expected_loglikelihood
 from statistical.pdfs import log_normal_pdf
 
 # Graph
@@ -33,12 +33,12 @@ def create_losses():
     return {
         'x_logits': logpx_z_fn,
         'z_latent': logpz_fn,
-        'x_log_pdf': logqz_x_fn,
+        'x_logpdf': logqz_x_fn,
 
     }
 
 def logpx_z_fn(inputs, x_logits):
-    reconstruction_loss = reconstuction_loss(x_logits=x_logits, x_true=inputs)
+    reconstruction_loss = expected_loglikelihood(x_logits=x_logits, x_true=inputs)
     logpx_z = tf.reduce_mean(-reconstruction_loss)
     return -logpx_z
 
@@ -46,6 +46,6 @@ def logpz_fn(inputs, latent):
     logpz = tf.reduce_mean(log_normal_pdf(latent, 0., 0.))
     return -logpz
 
-def logqz_x_fn(inputs, log_pdf):
-    logqz_x = tf.reduce_mean(-log_pdf)
+def logqz_x_fn(inputs, logpdf):
+    logqz_x = tf.reduce_mean(-logpdf)
     return -logqz_x
