@@ -127,7 +127,7 @@ class VAAE(autoencoder):
             print()
             print(f'training {k}')
             # 5- train the latent discriminator
-            model['variables'].fit(
+            model['variable'].fit(
                 x=x.map(self.create_batch_cast({k: model})),
                 validation_data=None if validation_data is None else validation_data.map(self.create_batch_cast({k: model})),
                 callbacks=[EarlyStopping()],

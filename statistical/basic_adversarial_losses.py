@@ -1,17 +1,17 @@
 import tensorflow as tf
 
-def create_inputs_discriminator_real_losses():
+def create_genertive_discriminator_real_losses():
     return  real_bce_fn
-def create_inputs_discriminator_fake_losses():
+def create_genertive_discriminator_fake_losses():
     return fake_bce_fn
-def create_inputs_generator_fake_losses():
+def create_genertive_generator_fake_losses():
     return gfake_bce_fn
 
-def create_latent_discriminator_real_losses():
+def create_inference_discriminator_real_losses():
     return  real_bce_fn
-def create_latent_discriminator_fake_losses():
+def create_inference_discriminator_fake_losses():
     return fake_bce_fn
-def create_latent_generator_fake_losses():
+def create_inference_generator_fake_losses():
     return gfake_bce_fn
 
 def real_bce_fn(real_true, real_pred_logits):
