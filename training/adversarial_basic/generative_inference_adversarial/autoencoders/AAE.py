@@ -107,7 +107,7 @@ class AAE(autoencoder):
         autoencoder.fit(
             self,
             x=x,
-            validation_data=validation_data
+            validation_data=validation_data,
             **kwargs
         )
 
@@ -117,7 +117,8 @@ class AAE(autoencoder):
                 layer_stuffing(model)
 
             for k, model in self.adversarial_models.items():
-                model['variable'] = clone_model(old_model=self.get_variables()[model['adversarial_item']], restore=self.filepath)
+                model['variable'] = clone_model(old_model=self.get_variables()[model['adversarial_item']],  new_name=k,
+                                                restore=self.filepath)
 
         # 2- create a latent discriminator
         if self.strategy:
