@@ -233,6 +233,7 @@ class VAAE(autoencoder):
         self._AA.get_variable = self.get_variable
         self._AA.inputs_shape = self.inputs_shape
         self._AA.latent_dim = self.latent_dim
+        self._AA.save = self.save
 
         print(self._AA.summary())
 

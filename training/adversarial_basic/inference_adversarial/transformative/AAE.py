@@ -135,7 +135,7 @@ class AAE(autoencoder):
             )
 
         kwargs['verbose'] = verbose
-        #kwargs['callbacks'] = callbacks
+        kwargs['callbacks'] = callbacks
 
         # 6- connect all for inference_adversarial training
         if self.strategy:
