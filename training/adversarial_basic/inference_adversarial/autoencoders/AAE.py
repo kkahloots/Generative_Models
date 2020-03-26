@@ -56,10 +56,11 @@ class AAE(autoencoder):
                 x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
             else:
                 x = tf.cast(batch, dtype=tf.float32) / self.input_scale
-            outputs_dict =  {k: model['adversarial_value'] for k, model in models.items()}
+            outputs_dict =  {k+'_outputs': model['adversarial_value'] for k, model in models.items()}
             outputs_dict = {'x_logits': x, **outputs_dict}
 
-            return {'inference_inputs': x },outputs_dict
+            encoded = autoencoder.encode(self, inputs={'inputs': x})
+            return {'inference_inputs': x, 'generative_inputs': encoded['z_latent'] }, outputs_dict
 
         return batch_cast_fn
 
@@ -119,8 +120,9 @@ class AAE(autoencoder):
         else:
             self.discriminators_compile()
 
-        verbose = kwargs['verbose']
-        callbacks = kwargs['callbacks']
+        verbose = kwargs.pop('verbose')
+        callbacks = kwargs.pop('callbacks')
+        kwargs.pop('input_kw')
 
         for k, model in self.adversarial_models.items():
             print()
@@ -156,9 +158,9 @@ class AAE(autoencoder):
 
         # 7- training together
         self._AA.fit(
-            x=x.map(self.create_batch_cast({k: model})),
-            validation_data=None if validation_data is None else validation_data.map(
-                self.create_batch_cast({k: model})),
+            x=x.map(self.create_batch_cast(self.adversarial_models)),
+            validation_data=None if validation_data is None else \
+                validation_data.map(self.create_batch_cast(self.adversarial_models)),
             **kwargs
         )
 
@@ -194,9 +196,10 @@ class AAE(autoencoder):
         aeloss_weights = {k: (1-discriminator_weight)*(1-generator_weight)/len(self.ae_losses) for k in self.ae_losses.keys()}
         gloss_weights = {k: (1-discriminator_weight)*(generator_weight)/len(generator_losses) for k in generator_losses}
         discriminator_weights = {k:  discriminator_weight/dlen for k in self.adversarial_losses.keys() if k not in generator_losses}
+        adversarial_losses = {k: fn() for k, fn in self.adversarial_losses.items() }
         self._AA.compile(
             optimizer=self.optimizer,
-            loss={**self.ae_losses, **self.adversarial_losses},
+            loss={**self.ae_losses, **adversarial_losses},
             metrics=self.ae_metrics,
             loss_weights={**aeloss_weights, **gloss_weights, **discriminator_weights}
         )

@@ -55,10 +55,10 @@ class AAE(autoencoder):
             xt0 = tf.cast(xt0, dtype=tf.float32) / self.input_scale
             xt1 = tf.cast(xt1, dtype=tf.float32) / self.input_scale
 
-            outputs_dict =  {k: model['adversarial_value'] for k, model in models.items()}
+            outputs_dict =  {k+'_outputs': model['adversarial_value'] for k, model in models.items()}
             outputs_dict = {'x_logits': xt1, **outputs_dict}
 
-            return {'inference_inputs': xt0 },outputs_dict
+            return {'inference_inputs': xt0, 'generative_inputs': 0.0 },outputs_dict
 
         return batch_cast_fn
 
@@ -118,8 +118,9 @@ class AAE(autoencoder):
         else:
             self.discriminators_compile()
 
-        verbose = kwargs['verbose']
-        callbacks = kwargs['callbacks']
+        verbose = kwargs.pop('verbose')
+        callbacks = kwargs.pop('callbacks')
+        kwargs.pop('input_kw')
 
         for k, model in self.adversarial_models.items():
             print()
@@ -134,7 +135,7 @@ class AAE(autoencoder):
             )
 
         kwargs['verbose'] = verbose
-        kwargs['callbacks'] = callbacks
+        #kwargs['callbacks'] = callbacks
 
         # 6- connect all for inference_adversarial training
         if self.strategy:
@@ -155,9 +156,9 @@ class AAE(autoencoder):
 
         # 7- training together
         self._AA.fit(
-            x=x.map(self.create_batch_cast({k: model})),
-            validation_data=None if validation_data is None else validation_data.map(
-                self.create_batch_cast({k: model})),
+            x=x.map(self.create_batch_cast(self.adversarial_models)),
+            validation_data=None if validation_data is None else \
+                validation_data.map(self.create_batch_cast(self.adversarial_models)),
             **kwargs
         )
 
@@ -193,9 +194,10 @@ class AAE(autoencoder):
         aeloss_weights = {k: (1-discriminator_weight)*(1-generator_weight)/len(self.ae_losses) for k in self.ae_losses.keys()}
         gloss_weights = {k: (1-discriminator_weight)*(generator_weight)/len(generator_losses) for k in generator_losses}
         discriminator_weights = {k:  discriminator_weight/dlen for k in self.adversarial_losses.keys() if k not in generator_losses}
+        adversarial_losses = {k: fn() for k, fn in self.adversarial_losses.items()}
         self._AA.compile(
             optimizer=self.optimizer,
-            loss={**self.ae_losses, **self.adversarial_losses},
+            loss={**self.ae_losses, **adversarial_losses},
             metrics=self.ae_metrics,
             loss_weights={**aeloss_weights, **gloss_weights, **discriminator_weights}
         )
@@ -204,6 +206,7 @@ class AAE(autoencoder):
         self._AA.get_variable = self.get_variable
         self._AA.inputs_shape = self.inputs_shape
         self._AA.latent_dim = self.latent_dim
+        self._AA.save = self.save
 
         print(self._AA.summary())
 
