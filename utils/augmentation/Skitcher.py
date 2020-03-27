@@ -34,6 +34,6 @@ class Skitch(Operation):
 
         for image in images:
             sketch_color, sketch_gray = cv2.pencilSketch(np.array(image).astype(np.float32), sigma_s=200, sigma_r=0.05, shade_factor=0.1)
-            augmented_images.append(sketch_color)
+            augmented_images.append(255-sketch_color)
 
         return augmented_images
