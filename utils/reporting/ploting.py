@@ -21,7 +21,7 @@ def plot_and_save_generated(generated, epoch, path, gray=True, save=True):
 
     if save:
         # tight_layout minimizes the overlap between 2 sub-plots
-        fig_name = os.path.join(path, 'image_at_epoch_{:05d}.png'.format(epoch))
+        fig_name = os.path.join(path, 'image_at_epoch_{:06d}.png'.format(epoch))
         plt.savefig(fig_name)
         plt.close()
 
