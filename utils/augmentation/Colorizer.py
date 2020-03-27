@@ -48,8 +48,7 @@ class Colorize(Operation):
 
                 except:
                     t_image = None
-
-            return t_image
+            return Image.fromarray(t_image)
 
         augmented_images = []
 

@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from Augmentor.Operations import Operation
-import scipy.ndimage
+from PIL import Image
 
 class Skitch(Operation):
     """
@@ -36,6 +36,6 @@ class Skitch(Operation):
             sketch_color, sketch_gray = cv2.pencilSketch(np.array(image).astype(np.float32), sigma_s=200, sigma_r=0.05, shade_factor=0.1)
             sketch_color = 255 - sketch_color
             image = np.stack([sketch_color, sketch_color, sketch_color], axis=2)
-            augmented_images.append(image)
+            augmented_images.append(Image.fromarray(image))
 
         return augmented_images
