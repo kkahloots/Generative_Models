@@ -30,28 +30,10 @@ class Skitch(Operation):
         :return: The transformed image(s) as a list of object(s) of type
          PIL.Image.
         """
-
-        def do(image):
-            def grayscale(rgb):
-                return cv2.cvtColor(np.array(rgb, dtype=np.float32), cv2.COLOR_BGR2GRAY)
-
-            def dodge(front, back):
-                result = front * 255 / (255 - back)
-                result[result > 255] = 255
-                result[back == 255] = 255
-                return result / 255.0
-
-            gray_img = grayscale(image)
-            inverted_img = 255 - gray_img
-
-            blur_img = scipy.ndimage.filters.gaussian_filter(inverted_img, sigma=10)
-            final_img = dodge(blur_img, gray_img)
-
-            return 255-final_img
-
         augmented_images = []
 
         for image in images:
-            augmented_images.append(do(image))
+            sketch_color, sketch_gray = cv2.pencilSketch(np.array(image).astype(np.float32), sigma_s=200, sigma_r=0.05, shade_factor=0.1)
+            augmented_images.append(sketch_color)
 
         return augmented_images
