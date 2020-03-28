@@ -156,3 +156,8 @@ class autoencoder(tf.keras.Model):
                {
                    'x_logits': x
                }
+
+    def reconstruct(self, images):
+        if len(images.shape)==3:
+            images = images.reshape((1,) + images.shape)
+        return tf.sigmoid(self.decode(self.encode(inputs={'inputs': images})))
