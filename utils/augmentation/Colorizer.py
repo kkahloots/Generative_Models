@@ -35,7 +35,11 @@ class Colorize(Operation):
 
         def do(image):
             t_image = None
-            flags = [eval('cv2.{}'.format(i)) for i in dir(cv2) if i.startswith('COLOR_')]
+            flags = set([eval('cv2.{}'.format(i)) for i in dir(cv2) if i.startswith('COLOR_')])
+            flags = [f for f in flags if
+                     f not in list(range(6, 32)) + list(range(36, 40)) + [44, 45] + list(range(50, 58)) + list(
+                         range(74, 80)) + list(range(82, 86)) + list(range(127, 135))]
+
             while t_image is None:
                 f = random.choice(flags)
                 if isinstance(image, Image.Image):

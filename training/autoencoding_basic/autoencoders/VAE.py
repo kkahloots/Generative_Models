@@ -18,7 +18,7 @@ class VAE(autoencoder):
             **kwargs
         )
 
-    def __ae_init__(self, **kwargs):
+    def __init_autoencoder__(self, **kwargs):
         # mean, logvariance = self.__encode__(inputs)
         # z = reparametrize(mean, logvariance)
         # connect the graph x' = decode(z)
@@ -56,7 +56,7 @@ class VAE(autoencoder):
             **kwargs
         )
 
-    def __renaming__(self):
+    def __rename_outputs__(self):
         ## rename the outputs
         for i, output_name in enumerate(self.output_names):
             if 'logpdf' in output_name:

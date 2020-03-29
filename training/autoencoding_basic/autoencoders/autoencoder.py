@@ -11,7 +11,6 @@ class autoencoder(tf.keras.Model):
     def __init__(
             self,
             name,
-            outputs_shape,
             latents_dim,
             variables_params,
             batch_size=100,
@@ -25,9 +24,9 @@ class autoencoder(tf.keras.Model):
             variables_params=variables_params,
             restore=filepath
         )
-        self.filepath = filepath
+
         self._name = name
-        self.outputs_shape = outputs_shape
+        self.filepath = filepath
         self.latents_dim = latents_dim
         self.batch_size = batch_size
         self.encode_fn = encode_fn
@@ -35,13 +34,13 @@ class autoencoder(tf.keras.Model):
         self.generate_sample = generate_sample
         self.save_models = save_models
         self.load_models = load_models
-        self.__ae_init__(**kwargs)
-        self.__renaming__()
+        self.__init_autoencoder__(**kwargs)
+        self.__rename_outputs__()
 
     def get_variable(self, var_name, param):
         return self.get_variables()[var_name](*param)
 
-    def __ae_init__(self, **kwargs):
+    def __init_autoencoder__(self, **kwargs):
         # connect the graph x' = decode(encode(x))
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
         latents = self.__encode__(inputs=inputs_dict)
@@ -56,7 +55,7 @@ class autoencoder(tf.keras.Model):
             **kwargs
         )
 
-    def __renaming__(self):
+    def __rename_outputs__(self):
         # rename the outputs
         self.output_names = ['x_logits']
 
