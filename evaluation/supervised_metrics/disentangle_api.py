@@ -63,7 +63,7 @@ def supervised_metrics(
     scores["informativeness_train"] = train_err
     scores["informativeness_test"] = test_err
     scores["disentanglement"] = disentanglement(importance_matrix)
-    scores["supervised_metrics"] = completeness(importance_matrix)
+    scores["completeness"] = completeness(importance_matrix)
     scores["sap"] = compute_sap(mus_train, ys_train, mus_test, ys_test, continuous_factors)
     return scores
 

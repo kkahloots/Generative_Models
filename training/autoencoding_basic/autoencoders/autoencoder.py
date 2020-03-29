@@ -7,7 +7,6 @@ from evaluation.quantitive_metrics.metrics import create_metrics
 from graphs.basics.AE_graph import create_graph, create_losses, encode_fn, decode_fn, generate_sample
 from graphs.builder import load_models, save_models
 
-
 class autoencoder(tf.keras.Model):
     def __init__(
             self,
@@ -161,3 +160,13 @@ class autoencoder(tf.keras.Model):
         if len(images.shape)==3:
             images = images.reshape((1,) + images.shape)
         return tf.sigmoid(self.decode(self.encode(inputs={'inputs': images})))
+
+    def generate_random_images(self, num_images=None):
+        num_images = num_images or self.batch_size
+        latent_shape = [num_images, self.latent_dim]
+        random_latent = tf.random.normal(shape=latent_shape)
+        generated = self.generate_sample(model=self.get_variable,
+                                               inputs_shape=self.inputs_shape,
+                                               latent_shape=latent_shape,
+                                               eps=random_latent)
+        return generated
