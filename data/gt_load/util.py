@@ -34,35 +34,35 @@ def tf_data_set_from_ground_truth_data(ground_truth_data, random_seed):
 
 
 class SplitDiscreteStateSpace(object):
-    """State space with factors split between latent variable and observations."""
+    """State space with factors split between latents variable and observations."""
 
-    def __init__(self, factor_sizes, latent_factor_indices):
+    def __init__(self, factor_sizes, latents_factor_indices):
         self.factor_sizes = factor_sizes
         self.num_factors = len(self.factor_sizes)
-        self.latent_factor_indices = latent_factor_indices
+        self.latents_factor_indices = latents_factor_indices
         self.observation_factor_indices = [
             i for i in range(self.num_factors)
-            if i not in self.latent_factor_indices
+            if i not in self.latents_factor_indices
         ]
 
     @property
-    def num_latent_factors(self):
-        return len(self.latent_factor_indices)
+    def num_latents_factors(self):
+        return len(self.latents_factor_indices)
 
-    def sample_latent_factors(self, num, random_state):
-        """Sample a batch of the latent factors."""
+    def sample_latents_factors(self, num, random_state):
+        """Sample a batch of the latents factors."""
         factors = np.zeros(
-            shape=(num, len(self.latent_factor_indices)), dtype=np.int64)
-        for pos, i in enumerate(self.latent_factor_indices):
+            shape=(num, len(self.latents_factor_indices)), dtype=np.int64)
+        for pos, i in enumerate(self.latents_factor_indices):
             factors[:, pos] = self._sample_factor(i, num, random_state)
         return factors
 
-    def sample_all_factors(self, latent_factors, random_state):
-        """Samples the remaining factors based on the latent factors."""
-        num_samples = latent_factors.shape[0]
+    def sample_all_factors(self, latents_factors, random_state):
+        """Samples the remaining factors based on the latents factors."""
+        num_samples = latents_factors.shape[0]
         all_factors = np.zeros(
             shape=(num_samples, self.num_factors), dtype=np.int64)
-        all_factors[:, self.latent_factor_indices] = latent_factors
+        all_factors[:, self.latents_factor_indices] = latents_factors
         # Complete all the other factors
         for i in self.observation_factor_indices:
             all_factors[:, i] = self._sample_factor(i, num_samples, random_state)

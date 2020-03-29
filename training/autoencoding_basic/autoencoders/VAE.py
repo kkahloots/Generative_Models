@@ -18,31 +18,31 @@ class VAE(autoencoder):
             **kwargs
         )
 
-    def connect(self, **kwargs):
-        # mean, logvariance = self.encode(inputs)
+    def __ae_init__(self, **kwargs):
+        # mean, logvariance = self.__encode__(inputs)
         # z = reparametrize(mean, logvariance)
         # connect the graph x' = decode(z)
         inputs_dict= {
             'x_mean': self.get_variables()['inference_mean'].inputs[0],
             'x_logvariance': self.get_variables()['inference_logvariance'].inputs[0]
         }
-        encoded = self.encode(inputs=inputs_dict)
-        x_logits = self.decode(encoded['z_latent'])
+        encoded = self.__encode__(inputs=inputs_dict)
+        x_logits = self.decode(encoded['z_latents'])
 
         logpdf = log_normal_pdf(
-            sample=encoded['z_latent'],
+            sample=encoded['z_latents'],
             mean=encoded['inference_mean'],
             logvariance=encoded['inference_logvariance']
         )
 
         # renaming
         x_logits._name = 'x_logits'
-        encoded['z_latent']._name = 'z_latent'
+        encoded['z_latents']._name = 'z_latents'
         encoded['inference_mean']._name = 'inference_mean'
         encoded['inference_logvariance']._name = 'inference_logvariance'
         outputs_dict = {
             'x_logits': x_logits,
-            'z_latent': encoded['z_latent'],
+            'z_latents': encoded['z_latents'],
             'x_mean': encoded['inference_mean'],
             'x_logvariance': encoded['inference_logvariance'],
             'logpdf': logpdf
@@ -56,13 +56,13 @@ class VAE(autoencoder):
             **kwargs
         )
 
-    def outputs_renaming_fn(self):
+    def __renaming__(self):
         ## rename the outputs
         for i, output_name in enumerate(self.output_names):
             if 'logpdf' in output_name:
                 self.output_names[i] = 'x_logpdf'
-            elif 'z_latent' in output_name:
-                self.output_names[i] = 'z_latent'
+            elif 'z_latents' in output_name:
+                self.output_names[i] = 'z_latents'
             elif 'x_logits' in output_name:
                 self.output_names[i] = 'x_logits'
             elif 'logvariance' in output_name:
@@ -72,6 +72,7 @@ class VAE(autoencoder):
             else:
                 pass
 
+    # override function
     def compile(
             self,
             optimizer=RAdam(),
@@ -88,6 +89,9 @@ class VAE(autoencoder):
         tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
 
+    def get_input_shape(self):
+        return self.input_shape['inference_mean'][1:]
+
     def batch_cast(self, batch):
         if self.input_kw:
             x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
@@ -99,6 +103,6 @@ class VAE(autoencoder):
                }, \
                {
                    'x_logits': x,
-                   'z_latent': 0.0,
+                   'z_latents': 0.0,
                    'x_logpdf':0.0
                }

@@ -33,18 +33,18 @@ def encode_fn(**kwargs):
     inputs = kwargs['inputs']
     z = model('inference', [inputs])
     return {
-        'z_latent': z
+        'z_latents': z
     }
 
-def decode_fn(model, latent, inputs_shape, apply_sigmoid=False):
-    x_logits = model('generative', [latent])
+def decode_fn(model, latents, input_shape, apply_sigmoid=False):
+    x_logits = model('generative', [latents])
     if apply_sigmoid:
         probs = tf.sigmoid(x_logits)
-        return tf.reshape(tensor=probs, shape=[-1] + [*inputs_shape], name='x_probablities')
-    return tf.reshape(tensor=x_logits, shape=[-1] + [*inputs_shape], name='x_logits')
+        return tf.reshape(tensor=probs, shape=[-1] + [*input_shape], name='x_probablities')
+    return tf.reshape(tensor=x_logits, shape=[-1] + [*input_shape], name='x_logits')
 
-def generate_sample(model, inputs_shape, latent_shape, eps=None):
+def generate_sample(model, input_shape, latents_shape, eps=None):
     if eps is None:
-        eps = tf.random.normal(shape=latent_shape)
-    generated = decode_fn(model=model, latent=eps, inputs_shape=inputs_shape, apply_sigmoid=True)
+        eps = tf.random.normal(shape=latents_shape)
+    generated = decode_fn(model=model, latents=eps, input_shape=input_shape, apply_sigmoid=True)
     return generated

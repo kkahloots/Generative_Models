@@ -9,7 +9,7 @@ class default_config:
     lay_dim = 50
     num_lay = 4
     batch_size = 50
-    latent_dim = 50
+    latents_dim = 50
     validation_pct = 20
     input_shape = (28, 28, 1)
     isConv=False

@@ -53,20 +53,20 @@ class SmallNORB(gt_data.GroundTruthData):
         self.images, features = da.from_array(_load_small_norb_chunks(data_template,
                                                         data_chuncks))
         self.factor_sizes = [5, 10, 9, 18, 6]
-        # Instances are not part of the latent space.
-        self.latent_factor_indices = [0, 2, 3, 4]
+        # Instances are not part of the latents space.
+        self.latents_factor_indices = [0, 2, 3, 4]
         self.num_total_factors = features.shape[1]
         self.index = util.StateSpaceAtomIndex(self.factor_sizes, features)
         self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                        self.latent_factor_indices)
+                                                        self.latents_factor_indices)
 
     @property
     def num_factors(self):
-        return self.state_space.num_latent_factors
+        return self.state_space.num_latents_factors
 
     @property
     def factors_num_values(self):
-        return [self.factor_sizes[i] for i in self.latent_factor_indices]
+        return [self.factor_sizes[i] for i in self.latents_factor_indices]
 
     @property
     def observation_shape(self):
@@ -74,7 +74,7 @@ class SmallNORB(gt_data.GroundTruthData):
 
     def sample_factors(self, num, random_state):
         """Sample a batch of factors Y."""
-        return self.state_space.sample_latent_factors(num, random_state)
+        return self.state_space.sample_latents_factors(num, random_state)
 
     def sample_observations_from_factors(self, factors, random_state):
         all_factors = self.state_space.sample_all_factors(factors, random_state)

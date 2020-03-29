@@ -44,17 +44,17 @@ class Cars3D(gt_data.GroundTruthData):
         self.data_path = data_path
         self.factor_sizes = [4, 24, 183]
         features = cartesian([np.array(list(range(i))) for i in self.factor_sizes])
-        self.latent_factor_indices = [0, 1, 2]
+        self.latents_factor_indices = [0, 1, 2]
         self.num_total_factors = features.shape[1]
         self.index = util.StateSpaceAtomIndex(self.factor_sizes, features)
         self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                        self.latent_factor_indices)
+                                                        self.latents_factor_indices)
         self.data_shape = [64, 64, 3]
         self.images = self._load_data()
 
     @property
     def num_factors(self):
-        return self.state_space.num_latent_factors
+        return self.state_space.num_latents_factors
 
     @property
     def factors_num_values(self):
@@ -66,7 +66,7 @@ class Cars3D(gt_data.GroundTruthData):
 
     def sample_factors(self, num, random_state):
         """Sample a batch of factors Y."""
-        return self.state_space.sample_latent_factors(num, random_state)
+        return self.state_space.sample_latents_factors(num, random_state)
 
     def sample_observations_from_factors(self, factors, random_state):
         """Sample a batch of observations X given a batch of factors Y."""

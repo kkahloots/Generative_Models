@@ -6,8 +6,8 @@ class SampleGeneration(tf.keras.callbacks.Callback):
             filepath,
             gen_freq=5,
             save_img=False,
-            random_latent=None,
-            latent_shape=50,
+            random_latents=None,
+            latents_shape=50,
             gray_plot=False,
             **kws
     ):
@@ -16,18 +16,18 @@ class SampleGeneration(tf.keras.callbacks.Callback):
         self.save_img = save_img
         self.gray_plot = gray_plot
 
-        if random_latent is None:
-            self.random_latent = tf.random.normal(shape=[50, latent_shape])
+        if random_latents is None:
+            self.random_latents = tf.random.normal(shape=[50, latents_shape])
         else:
-            self.random_latent = random_latent
+            self.random_latents = random_latents
 
         tf.keras.callbacks.Callback.__init__(self, **kws)
 
     def on_epoch_end(self, epoch, logs={}):
         if epoch % self.gen_freq == 0:  # or save after some epoch, each k-th epoch etc.
             generated = self.model.generate_sample(model=self.model.get_variable,
-                                                   inputs_shape=self.model.inputs_shape,
-                                                   latent_shape=[50, self.model.latent_dim],
-                                                   eps=self.random_latent)
+                                                   input_shape=self.model.inputs_shape,
+                                                   latents_shape=[50, self.model.latents_dim],
+                                                   eps=self.random_latents)
             plot_and_save_generated(generated=generated, epoch=epoch, path=self.filepath, gray=self.gray_plot,
                                     save=self.save_img)

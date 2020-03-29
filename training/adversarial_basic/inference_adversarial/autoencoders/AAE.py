@@ -59,25 +59,12 @@ class AAE(autoencoder):
             outputs_dict =  {k+'_outputs': model['adversarial_value'] for k, model in models.items()}
             outputs_dict = {'x_logits': x, **outputs_dict}
 
-            encoded = autoencoder.encode(self, inputs={'inputs': x})
-            return {'inference_inputs': x, 'generative_inputs': encoded['z_latent'] }, outputs_dict
+            encoded = autoencoder.__encode__(self, inputs={'inputs': x})
+            return {'inference_inputs': x, 'generative_inputs': encoded['z_latents'] }, outputs_dict
 
         return batch_cast_fn
 
-
-    def compile(
-            self,
-            adversarial_losses,
-            adversarial_weights,
-            **kwargs
-    ):
-        self.adversarial_losses=adversarial_losses
-        self.adversarial_weights=adversarial_weights
-        autoencoder.compile(
-            self,
-            **kwargs
-        )
-
+    # override function
     def fit(
             self,
             x,
@@ -103,7 +90,7 @@ class AAE(autoencoder):
                 model['variable'] = clone_model(old_model=self.get_variables()[model['adversarial_item']],  new_name=k,
                                                 restore=self.filepath)
 
-        # 2- create a latent discriminator
+        # 2- create a latents discriminator
         if self.strategy:
             with self.strategy:
                 create_discriminator()
@@ -127,7 +114,7 @@ class AAE(autoencoder):
         for k, model in self.adversarial_models.items():
             print()
             print(f'training {k}')
-            # 5- train the latent discriminator
+            # 5- train the latents discriminator
             model['variable'].fit(
                 x=x.map(self.create_batch_cast({k: model})),
                 validation_data=None if validation_data is None else validation_data.map(self.create_batch_cast({k: model})),
@@ -142,9 +129,9 @@ class AAE(autoencoder):
         # 6- connect all for inference_adversarial training
         if self.strategy:
             if self.strategy:
-                self.connect_models()
+                self.__models_init__()
         else:
-            self.connect_models()
+            self.__models_init__()
 
         print()
         print('training adversarial models')
@@ -164,14 +151,14 @@ class AAE(autoencoder):
             **kwargs
         )
 
-    def connect_models(self):
+    def __models_init__(self):
         self.get_variables = self.adversarial_get_variables
         self.encode_fn = inference_discriminate_encode_fn
         inputs_dict= {
             'inputs': self.get_variables()['inference'].inputs[0]
         }
-        encoded = self.encode(inputs=inputs_dict)
-        x_logits = self.decode(encoded['z_latent'])
+        encoded = self.__encode__(inputs=inputs_dict)
+        x_logits = self.decode(encoded['z_latents'])
 
         outputs_dict = {k+'_predictions': encoded[k+'_predictions'] for k in self.adversarial_models.keys()}
         outputs_dict = {'x_logits': x_logits, **outputs_dict}
@@ -206,12 +193,13 @@ class AAE(autoencoder):
 
         self._AA.generate_sample = self.generate_sample
         self._AA.get_variable = self.get_variable
-        self._AA.inputs_shape = self.inputs_shape
-        self._AA.latent_dim = self.latent_dim
+        self._AA.inputs_shape = self.get_input_shape()
+        self._AA.latents_dim = self.latents_dim
         self._AA.save = self.save
 
         print(self._AA.summary())
 
+    # override function
     def compile(
             self,
             adversarial_losses,

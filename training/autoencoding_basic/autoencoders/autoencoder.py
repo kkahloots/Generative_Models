@@ -11,9 +11,8 @@ class autoencoder(tf.keras.Model):
     def __init__(
             self,
             name,
-            inputs_shape,
             outputs_shape,
-            latent_dim,
+            latents_dim,
             variables_params,
             batch_size=100,
             filepath=None,
@@ -28,23 +27,25 @@ class autoencoder(tf.keras.Model):
         )
         self.filepath = filepath
         self._name = name
-        self.inputs_shape = inputs_shape
         self.outputs_shape = outputs_shape
-        self.latent_dim = latent_dim
+        self.latents_dim = latents_dim
         self.batch_size = batch_size
         self.encode_fn = encode_fn
         self.decode_fn = decode_fn
         self.generate_sample = generate_sample
         self.save_models = save_models
         self.load_models = load_models
-        self.connect(**kwargs)
-        self.outputs_renaming_fn()
+        self.__ae_init__(**kwargs)
+        self.__renaming__()
 
-    def connect(self, **kwargs):
+    def get_variable(self, var_name, param):
+        return self.get_variables()[var_name](*param)
+
+    def __ae_init__(self, **kwargs):
         # connect the graph x' = decode(encode(x))
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
-        latent = self.encode(inputs=inputs_dict)
-        x_logits = self.decode(latent)
+        latents = self.__encode__(inputs=inputs_dict)
+        x_logits = self.decode(latents)
         outputs_dict =  [x_logits]
 
         tf.keras.Model.__init__(
@@ -55,10 +56,11 @@ class autoencoder(tf.keras.Model):
             **kwargs
         )
 
-    def outputs_renaming_fn(self):
+    def __renaming__(self):
         # rename the outputs
         self.output_names = ['x_logits']
 
+    # override function
     def compile(
             self,
             optimizer=RAdam(),
@@ -75,6 +77,7 @@ class autoencoder(tf.keras.Model):
         tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
 
+    # override function
     def fit(
             self,
             x,
@@ -117,22 +120,7 @@ class autoencoder(tf.keras.Model):
                 initial_epoch=initial_epoch
             )
 
-    def encode(self, **kwargs):
-        inputs = kwargs['inputs']
-        for k, v in  inputs.items():
-            if inputs[k].shape == self.inputs_shape:
-                inputs[k] = tf.reshape(inputs[k], (1, ) + self.inputs_shape)
-            inputs[k] = tf.cast(inputs[k], tf.float32)
-        kwargs['model']  = self.get_variable
-        kwargs['latent_shape'] = (self.batch_size, self.latent_dim)
-        return self.encode_fn(**kwargs)
-
-    def decode(self, latent):
-        return self.decode_fn(model=self.get_variable, latent=latent, inputs_shape=self.inputs_shape)
-
-    def get_variable(self, var_name, param):
-        return self.get_variables()[var_name](*param)
-
+    # override function
     def save(self,
              filepath,
              overwrite=True,
@@ -142,6 +130,44 @@ class autoencoder(tf.keras.Model):
              options=None):
         file_Name = os.path.join(filepath, self.name)
         self.save_models(file_Name, self.get_variables())
+
+    def get_input_shape(self):
+        return self.input_shape['inference'][1:]
+
+    def __encode__(self, **kwargs):
+        inputs = kwargs['inputs']
+        for k, v in  inputs.items():
+            if inputs[k].shape == self.get_input_shape():
+                inputs[k] = tf.reshape(inputs[k], (1, ) + self.get_input_shape())
+            inputs[k] = tf.cast(inputs[k], tf.float32)
+        kwargs['model']  = self.get_variable
+        kwargs['latents_shape'] = (self.batch_size, self.latents_dim)
+        return self.encode_fn(**kwargs)
+
+    # autoencoder function
+    def encode(self, x):
+        return self.__encode__(inputs={'inputs': x})['z_latents']
+
+    # autoencoder function
+    def decode(self, latents):
+        return self.decode_fn(model=self.get_variable, latents=latents, input_shape=self.get_input_shape())
+
+    # autoencoder function
+    def reconstruct(self, images):
+        if len(images.shape)==3:
+            images = images.reshape((1,) + images.shape)
+        return tf.sigmoid(self.decode(self.encode(images)))
+
+    # autoencoder function
+    def generate_random_images(self, num_images=None):
+        num_images = num_images or self.batch_size
+        latents_shape = [num_images, self.latents_dim]
+        random_latents = tf.random.normal(shape=latents_shape)
+        generated = self.generate_sample(model=self.get_variable,
+                                         input_shape=self.get_input_shape(),
+                                         latents_shape=latents_shape,
+                                         eps=random_latents)
+        return generated
 
     def batch_cast(self, batch):
         if self.input_kw:
@@ -155,18 +181,3 @@ class autoencoder(tf.keras.Model):
                {
                    'x_logits': x
                }
-
-    def reconstruct(self, images):
-        if len(images.shape)==3:
-            images = images.reshape((1,) + images.shape)
-        return tf.sigmoid(self.decode(self.encode(inputs={'inputs': images})))
-
-    def generate_random_images(self, num_images=None):
-        num_images = num_images or self.batch_size
-        latent_shape = [num_images, self.latent_dim]
-        random_latent = tf.random.normal(shape=latent_shape)
-        generated = self.generate_sample(model=self.get_variable,
-                                               inputs_shape=self.inputs_shape,
-                                               latent_shape=latent_shape,
-                                               eps=random_latent)
-        return generated

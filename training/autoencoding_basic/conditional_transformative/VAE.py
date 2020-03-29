@@ -10,7 +10,7 @@ class VAE(autoencoder):
             name,
             inputs_shape,
             outputs_shape,
-            latent_dim,
+            latents_dim,
             variables_params,
             filepath=None
     ):
@@ -19,7 +19,7 @@ class VAE(autoencoder):
                              name=name,
                              inputs_shape=inputs_shape,
                              outputs_shape=outputs_shape,
-                             latent_dim=latent_dim,
+                             latents_dim=latents_dim,
                              variables_params=variables_params,
                              filepath=filepath,
                              model_fn=create_graph)
@@ -30,7 +30,7 @@ class VAE(autoencoder):
     def feedforwad(self, inputs):
         X = inputs[0]
         y = inputs[1]
-        z, mean, logvariance = self.encode(X)
+        z, mean, logvariance = self.__encode__(X)
         x_logit = self.decode(tf.concat[z, y])
-        return {'x_logit': x_logit, 'latent': z, 'mean': mean, 'logvariance':logvariance}
+        return {'x_logit': x_logit, 'latents': z, 'mean': mean, 'logvariance':logvariance}
     

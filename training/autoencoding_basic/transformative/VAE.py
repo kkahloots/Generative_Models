@@ -12,7 +12,7 @@ class VAE(VAE):
                }, \
                {
                    'x_logits': xt1,
-                   'z_latent': 0.0,
+                   'z_latents': 0.0,
                    'x_logpdf':0.0,
                    'x_logvariance': 0.0,
                    'x_mean': 0.0

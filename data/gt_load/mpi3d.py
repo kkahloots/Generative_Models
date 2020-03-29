@@ -88,15 +88,15 @@ class MPI3D(gt_data.GroundTruthData):
 
           self.images = data["images"]
           self.factor_sizes = [4, 4, 2, 3, 3, 40, 40]
-          self.latent_factor_indices = [0, 1, 2, 3, 4, 5, 6]
+          self.latents_factor_indices = [0, 1, 2, 3, 4, 5, 6]
           self.num_total_factors = 7
           self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                          self.latent_factor_indices)
+                                                          self.latents_factor_indices)
           self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(self.factor_sizes)
 
       @property
       def num_factors(self):
-          return self.state_space.num_latent_factors
+          return self.state_space.num_latents_factors
 
       @property
       def factors_num_values(self):
@@ -108,7 +108,7 @@ class MPI3D(gt_data.GroundTruthData):
 
       def sample_factors(self, num, random_state):
           """Sample a batch of factors Y."""
-          return self.state_space.sample_latent_factors(num, random_state)
+          return self.state_space.sample_latents_factors(num, random_state)
 
       def sample_observations_from_factors(self, factors, random_state):
           all_factors = self.state_space.sample_all_factors(factors, random_state)
