@@ -131,7 +131,7 @@ class autoencoder(tf.keras.Model):
         self.save_models(file_Name, self.get_variables())
 
     def get_input_shape(self):
-        return self.input_shape['inference'][1:]
+        return self.get_variables()['inference'].inputs[0].shape[1:]
 
     def __encode__(self, **kwargs):
         inputs = kwargs['inputs']

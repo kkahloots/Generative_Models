@@ -90,7 +90,7 @@ class VAE(autoencoder):
         print(self.summary())
 
     def get_input_shape(self):
-        return self.input_shape['inference_mean'][1:]
+        return self.get_variables()['inference_mean'].inputs[0].shape[1:]
 
     def batch_cast(self, batch):
         if self.input_kw:
