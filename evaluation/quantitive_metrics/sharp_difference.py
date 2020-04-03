@@ -50,11 +50,11 @@ def sharpdiff(inputs, x_logits):
         convx = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_x, strides, padding=padding))
         convy = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_y, strides, padding=padding))
 
-        gen_dx = tf.reduce_sum(tf.map_fn(convx, gen_frames))
-        gen_dy = tf.reduce_sum(tf.map_fn(convy, gen_frames))
+        gen_dx = tf.reduce_sum(tf.map_fn(convx, gen_frames), axis=1)
+        gen_dy = tf.reduce_sum(tf.map_fn(convy, gen_frames), axis = 1)
 
-        gt_dx = tf.reduce_sum(tf.map_fn(convx, gt_frames))
-        gt_dy = tf.reduce_sum(tf.map_fn(convy, gt_frames))
+        gt_dx = tf.reduce_sum(tf.map_fn(convx, gt_frames), axis=1)
+        gt_dy = tf.reduce_sum(tf.map_fn(convy, gt_frames), axis=1)
 
 
     else:
