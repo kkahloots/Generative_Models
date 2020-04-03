@@ -2,7 +2,6 @@ import numpy as np
 import tensorflow as tf
 from evaluation.shared import log10
 
-#@tf.function
 def sharpdiff(inputs, x_logits):
     """
     Computes the Sharpness Difference error between the generated images and the ground truth
@@ -17,21 +16,25 @@ def sharpdiff(inputs, x_logits):
     """
     gen_frames = tf.sigmoid(x_logits)
     gt_frames = inputs
-    #TODO
-    # shape2 = list(gt_frames.shape)
-    # print(shape2)
-    # # print( [-1 , shape2[-3:]])
-    # if len(shape2) > 4:
-    #     gt_frames = tf.reshape(gt_frames,tf.TensorShape( [-1, ] + shape2[-3:]))
-    #     gen_frames = tf.reshape(gen_frames, tf.TensorShape( [-1, ] + shape2[-3:]))
-    shape = gen_frames.shape
-    num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
-    if shape[3] == 1:
-        gen_frames = tf.image.grayscale_to_rgb(gen_frames)
-        gt_frames = tf.image.grayscale_to_rgb(gt_frames)
 
-        shape = tf.shape(gen_frames)
+    shape = gen_frames.shape
+    if len(shape) > 4:
+        num_pixels = tf.cast(x=shape[2] * shape[3] * shape[4], dtype='float')
+        if shape[4] == 1:
+            gen_frames = tf.image.grayscale_to_rgb(gen_frames)
+            gt_frames = tf.image.grayscale_to_rgb(gt_frames)
+
+            shape = tf.shape(gen_frames)
+            num_pixels = tf.cast(x=shape[2] * shape[3] * shape[4], dtype='float')
+
+    else:
         num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
+        if shape[3] == 1:
+            gen_frames = tf.image.grayscale_to_rgb(gen_frames)
+            gt_frames = tf.image.grayscale_to_rgb(gt_frames)
+
+            shape = tf.shape(gen_frames)
+            num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
 
     # gradient difference
     # create filters [-1, 1] and [[1],[-1]] for diffing to the left and down respectively.
@@ -43,10 +46,17 @@ def sharpdiff(inputs, x_logits):
     strides = [1, 1, 1, 1]  # stride of (1, 1)
     padding = 'SAME'
 
-    gen_dx = tf.abs(tf.nn.conv2d(gen_frames, filter_x, strides, padding=padding))
-    gen_dy = tf.abs(tf.nn.conv2d(gen_frames, filter_y, strides, padding=padding))
-    gt_dx = tf.abs(tf.nn.conv2d(gt_frames, filter_x, strides, padding=padding))
-    gt_dy = tf.abs(tf.nn.conv2d(gt_frames, filter_y, strides, padding=padding))
+    if len(shape) > 4:
+        gen_dx = sum([tf.abs(tf.nn.conv2d(gen_frame, filter_x, strides, padding=padding)) for gen_frame in gen_frames])
+        gen_dy = sum([tf.abs(tf.nn.conv2d(gen_frame, filter_y, strides, padding=padding)) for gen_frame in gen_frames])
+        gt_dx = sum([tf.abs(tf.nn.conv2d(gt_frame, filter_x, strides, padding=padding)) for gt_frame in gt_frames])
+        gt_dy = sum([tf.abs(tf.nn.conv2d(gt_frame, filter_y, strides, padding=padding)) for gt_frame in gt_frames])
+
+    else:
+        gen_dx = tf.abs(tf.nn.conv2d(gen_frames, filter_x, strides, padding=padding))
+        gen_dy = tf.abs(tf.nn.conv2d(gen_frames, filter_y, strides, padding=padding))
+        gt_dx = tf.abs(tf.nn.conv2d(gt_frames, filter_x, strides, padding=padding))
+        gt_dy = tf.abs(tf.nn.conv2d(gt_frames, filter_y, strides, padding=padding))
 
     gen_grad_sum = gen_dx + gen_dy
     gt_grad_sum = gt_dx + gt_dy
