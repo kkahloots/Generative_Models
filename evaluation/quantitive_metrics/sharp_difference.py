@@ -17,7 +17,13 @@ def sharpdiff(inputs, x_logits):
     """
     gen_frames = tf.sigmoid(x_logits)
     gt_frames = inputs
-
+    #TODO
+    # shape2 = list(gt_frames.shape)
+    # print(shape2)
+    # # print( [-1 , shape2[-3:]])
+    # if len(shape2) > 4:
+    #     gt_frames = tf.reshape(gt_frames,tf.TensorShape( [-1, ] + shape2[-3:]))
+    #     gen_frames = tf.reshape(gen_frames, tf.TensorShape( [-1, ] + shape2[-3:]))
     shape = gen_frames.shape
     num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
     if shape[3] == 1:
