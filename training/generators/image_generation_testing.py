@@ -6,6 +6,8 @@ from evaluation.generativity_metrics.shared_api import slerp
 def reconstruct_from_a_batch(model, data_generator, save_dir):
     # Generate latents from the data
     original_data = next(data_generator)
+    if isinstance(original_data, tuple):
+        original_data = original_data[0]
     images = model.reconstruct(original_data).numpy()
 
     for i, (original_image, reconstructed_image) in enumerate(zip(original_data, images)):
@@ -20,14 +22,17 @@ def reconstruct_from_a_batch(model, data_generator, save_dir):
 
 def generate_images_like_a_batch(model, data_generator, save_dir):
     epsilon = 1e-3
-    # Generate random latents and interpolation t-values.
-    ln = np.random.normal(size=[model.latents_dim])
-    latents_t = np.array([ln for _ in range(model.batch_size)])
-    lerp_t = np.random.uniform()
 
     # Generate latents from the data
     original_data = next(data_generator)
+    if isinstance(original_data, tuple):
+        original_data = original_data[0]
     latents_real = model.encode(original_data)
+
+    # Generate random latents and interpolation t-values.
+    ln = np.random.normal(size=[latents_real.shape[1]])
+    latents_t = np.array([ln for _ in range(latents_real.shape[0])])
+    lerp_t = np.random.uniform()
 
     latents_e0 = slerp(latents_real[0::2], latents_t[1::2], lerp_t)
     latents_e1 = slerp(latents_real[0::2], latents_t[1::2], lerp_t + epsilon)

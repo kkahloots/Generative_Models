@@ -97,14 +97,14 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
 
     def generated_predictions_generator():
         while True:
-            # Generate random latents and interpolation t-values.
-            ln = np.random.normal(size=[model.latents_dim])
-            latents_t = np.array([ln for _ in range(model.batch_size)])
-            lerp_t = np.random.uniform()
-
             # Generate latents from the data
             data = next(data_generator)
             latents_real = model.encode(data)
+
+            # Generate random latents and interpolation t-values.
+            ln = np.random.normal(size=[latents_real.shape[1]])
+            latents_t = np.array([ln for _ in range(latents_real.shape[0])])
+            lerp_t = np.random.uniform()
 
             latents_e0 = slerp(latents_real[0::2], latents_t[1::2], lerp_t)
             latents_e1 = slerp(latents_real[0::2], latents_t[1::2], lerp_t + epsilon)
@@ -122,14 +122,14 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
 
     def generated_predictions_generator():
         while True:
-            # Generate random latents and interpolation t-values.
-            ln = np.random.normal(size=[model.latents_dim])
-            latents_t = np.array([ln for _ in range(model.batch_size)])
-            lerp_t = np.random.uniform()
-
             # Generate latents from the data
             data = next(data_generator)
             latents_real = model.encode(data)
+
+            # Generate random latents and interpolation t-values.
+            ln = np.random.normal(size=[latents_real.shape[1]])
+            latents_t = np.array([ln for _ in range(latents_real.shape[0])])
+            lerp_t = np.random.uniform()
 
             latents_e0 = slerp(latents_real[0::2], latents_t[1::2], lerp_t)
             latents_e1 = slerp(latents_real[0::2], latents_t[1::2], lerp_t + epsilon)

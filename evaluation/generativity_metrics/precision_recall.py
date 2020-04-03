@@ -134,13 +134,13 @@ def precision_score(model, data_generator, nhood_size=3, row_batch_size=10000, c
             data = next(data_generator)
             ref_features = VGG16_featues_fn(data)
 
-            # Generate random latents and interpolation t-values.
-            ln = np.random.normal(size=[model.latents_dim])
-            latents_t = np.array([ln for _ in range(model.batch_size)])
-            lerp_t = np.random.uniform()
-
             # Generate latents from the data
             latents_real = model.encode(data)
+
+            # Generate random latents and interpolation t-values.
+            ln = np.random.normal(size=[latents_real.shape[1]])
+            latents_t = np.array([ln for _ in range(latents_real.shape[0])])
+            lerp_t = np.random.uniform()
 
             latents_e0 = slerp(latents_real[0::2], latents_t[1::2], lerp_t)
             latents_e1 = slerp(latents_real[0::2], latents_t[1::2], lerp_t + epsilon)
@@ -181,13 +181,13 @@ def recall_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_
             data = next(data_generator)
             ref_features = VGG16_featues_fn(data)
 
-            # Generate random latents and interpolation t-values.
-            ln = np.random.normal(size=[model.latents_dim])
-            latents_t = np.array([ln for _ in range(model.batch_size)])
-            lerp_t = np.random.uniform()
-
             # Generate latents from the data
             latents_real = model.encode(data)
+
+            # Generate random latents and interpolation t-values.
+            ln = np.random.normal(size=[latents_real.shape[1]])
+            latents_t = np.array([ln for _ in range(latents_real.shape[0])])
+            lerp_t = np.random.uniform()
 
             latents_e0 = slerp(latents_real[0::2], latents_t[1::2], lerp_t)
             latents_e1 = slerp(latents_real[0::2], latents_t[1::2], lerp_t + epsilon)
