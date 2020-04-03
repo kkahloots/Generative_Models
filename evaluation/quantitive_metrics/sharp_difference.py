@@ -47,10 +47,15 @@ def sharpdiff(inputs, x_logits):
     padding = 'SAME'
 
     if len(shape) > 4:
-        gen_dx = sum([tf.abs(tf.nn.conv2d(gen_frame, filter_x, strides, padding=padding)) for gen_frame in gen_frames])
-        gen_dy = sum([tf.abs(tf.nn.conv2d(gen_frame, filter_y, strides, padding=padding)) for gen_frame in gen_frames])
-        gt_dx = sum([tf.abs(tf.nn.conv2d(gt_frame, filter_x, strides, padding=padding)) for gt_frame in gt_frames])
-        gt_dy = sum([tf.abs(tf.nn.conv2d(gt_frame, filter_y, strides, padding=padding)) for gt_frame in gt_frames])
+        convx = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_x, strides, padding=padding))
+        convy = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_y, strides, padding=padding))
+
+        gen_dx = tf.reduce_sum(tf.map_fn(convx, gen_frames))
+        gen_dy = tf.reduce_sum(tf.map_fn(convy, gen_frames))
+
+        gt_dx = tf.reduce_sum(tf.map_fn(convx, gt_frames))
+        gt_dy = tf.reduce_sum(tf.map_fn(convy, gt_frames))
+
 
     else:
         gen_dx = tf.abs(tf.nn.conv2d(gen_frames, filter_x, strides, padding=padding))
