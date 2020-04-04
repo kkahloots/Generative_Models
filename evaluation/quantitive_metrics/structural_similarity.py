@@ -7,5 +7,5 @@ def ssim_multiscale(imageA, imageB):
         imageA = tf.reshape(imageA, tf.TensorShape([shapeA[0] * shapeA[1]] + shapeA[2:]))
         imageB = tf.reshape(imageB, tf.TensorShape([shapeB[0] * shapeB[1]] + shapeB[2:]))
 
-    score, diff = compare_ssim(imageA, imageB, full=True,  multichannel=True)
+    score = tf.reduce_sum(tf.cast(compare_ssim(imageA, imageB, full=False,  multichannel=True)), dtype='float')
     return score
