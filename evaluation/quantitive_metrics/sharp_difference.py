@@ -17,24 +17,24 @@ def sharpdiff(inputs, x_logits):
     gen_frames = tf.sigmoid(x_logits)
     gt_frames = inputs
 
-    shape = gen_frames.shape
-    if len(shape) > 4:
-        num_pixels = tf.cast(x=shape[2] * shape[3] * shape[4], dtype='float')
-        if shape[4] == 1:
+    shape_gen = gen_frames.shape
+    if len(shape_gen) > 4:
+        num_pixels = tf.cast(x=shape_gen[2] * shape_gen[3] * shape_gen[4], dtype='float')
+        if shape_gen[4] == 1:
             gen_frames = tf.image.grayscale_to_rgb(gen_frames)
             gt_frames = tf.image.grayscale_to_rgb(gt_frames)
 
-            shape = tf.shape(gen_frames)
-            num_pixels = tf.cast(x=shape[2] * shape[3] * shape[4], dtype='float')
+            shape_gen = tf.shape(gen_frames)
+            num_pixels = tf.cast(x=shape_gen[2] * shape_gen[3] * shape_gen[4], dtype='float')
 
     else:
-        num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
-        if shape[3] == 1:
+        num_pixels = tf.cast(x=shape_gen[1] * shape_gen[2] * shape_gen[3], dtype='float')
+        if shape_gen[3] == 1:
             gen_frames = tf.image.grayscale_to_rgb(gen_frames)
             gt_frames = tf.image.grayscale_to_rgb(gt_frames)
 
-            shape = tf.shape(gen_frames)
-            num_pixels = tf.cast(x=shape[1] * shape[2] * shape[3], dtype='float')
+            shape_gen = tf.shape(gen_frames)
+            num_pixels = tf.cast(x=shape_gen[1] * shape_gen[2] * shape_gen[3], dtype='float')
 
     # gradient difference
     # create filters [-1, 1] and [[1],[-1]] for diffing to the left and down respectively.
@@ -46,7 +46,7 @@ def sharpdiff(inputs, x_logits):
     strides = [1, 1, 1, 1]  # stride of (1, 1)
     padding = 'SAME'
 
-    if len(shape) > 4:
+    if len(shape_gen) > 4:
         convx = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_x, strides, padding=padding))
         convy = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_y, strides, padding=padding))
 
