@@ -14,27 +14,23 @@ def sharpdiff(inputs, x_logits):
 
     @return: A scalar tensor. The Sharpness Difference error over each frame in the batch.
     """
-    gen_frames = tf.sigmoid(x_logits)
-    gt_frames = inputs
+    imageB = tf.sigmoid(x_logits)
+    imageA = inputs
+    shapeB = list(imageB.shape)
+    if len(shapeB) > 4:
+        shapeA = list(imageA.shape)
+        imageA = tf.reshape(imageA, tf.TensorShape([shapeA[0]*shapeA[1]]+shapeA[2:]))
+        imageB = tf.reshape(imageB, tf.TensorShape([shapeB[0] * shapeB[1]] + shapeB[2:]))
 
-    shape_gen = gen_frames.shape
-    if len(shape_gen) > 4:
-        num_pixels = tf.cast(x=shape_gen[2] * shape_gen[3] * shape_gen[4], dtype='float')
-        if shape_gen[4] == 1:
-            gen_frames = tf.image.grayscale_to_rgb(gen_frames)
-            gt_frames = tf.image.grayscale_to_rgb(gt_frames)
 
-            shape_gen = tf.shape(gen_frames)
-            num_pixels = tf.cast(x=shape_gen[2] * shape_gen[3] * shape_gen[4], dtype='float')
+    shapeB = list(imageB.shape)
+    num_pixels = tf.cast(x=shapeB[1] * shapeB[2] * shapeB[3], dtype='float')
+    if shapeB[3] == 1:
+        imageB = tf.image.grayscale_to_rgb(imageB)
+        imageA = tf.image.grayscale_to_rgb(imageA)
 
-    else:
-        num_pixels = tf.cast(x=shape_gen[1] * shape_gen[2] * shape_gen[3], dtype='float')
-        if shape_gen[3] == 1:
-            gen_frames = tf.image.grayscale_to_rgb(gen_frames)
-            gt_frames = tf.image.grayscale_to_rgb(gt_frames)
-
-            shape_gen = tf.shape(gen_frames)
-            num_pixels = tf.cast(x=shape_gen[1] * shape_gen[2] * shape_gen[3], dtype='float')
+        shapeB = tf.shape(imageB)
+        num_pixels = tf.cast(x=shapeB[1] * shapeB[2] * shapeB[3], dtype='float')
 
     # gradient difference
     # create filters [-1, 1] and [[1],[-1]] for diffing to the left and down respectively.
@@ -46,22 +42,10 @@ def sharpdiff(inputs, x_logits):
     strides = [1, 1, 1, 1]  # stride of (1, 1)
     padding = 'SAME'
 
-    if len(shape_gen) > 4:
-        convx = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_x, strides, padding=padding))
-        convy = lambda tensor: tf.abs(tf.nn.conv2d(tensor, filter_y, strides, padding=padding))
-
-        gen_dx = tf.reduce_sum(tf.map_fn(convx, gen_frames), axis=1)
-        gen_dy = tf.reduce_sum(tf.map_fn(convy, gen_frames), axis = 1)
-
-        gt_dx = tf.reduce_sum(tf.map_fn(convx, gt_frames), axis=1)
-        gt_dy = tf.reduce_sum(tf.map_fn(convy, gt_frames), axis=1)
-
-
-    else:
-        gen_dx = tf.abs(tf.nn.conv2d(gen_frames, filter_x, strides, padding=padding))
-        gen_dy = tf.abs(tf.nn.conv2d(gen_frames, filter_y, strides, padding=padding))
-        gt_dx = tf.abs(tf.nn.conv2d(gt_frames, filter_x, strides, padding=padding))
-        gt_dy = tf.abs(tf.nn.conv2d(gt_frames, filter_y, strides, padding=padding))
+    gen_dx = tf.abs(tf.nn.conv2d(imageB, filter_x, strides, padding=padding))
+    gen_dy = tf.abs(tf.nn.conv2d(imageB, filter_y, strides, padding=padding))
+    gt_dx = tf.abs(tf.nn.conv2d(imageA, filter_x, strides, padding=padding))
+    gt_dy = tf.abs(tf.nn.conv2d(imageA, filter_y, strides, padding=padding))
 
     gen_grad_sum = gen_dx + gen_dy
     gt_grad_sum = gt_dx + gt_dy

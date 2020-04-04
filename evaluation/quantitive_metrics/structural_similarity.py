@@ -2,15 +2,13 @@ import tensorflow as tf
 def ssim_multiscale(inputs, x_logits):
     imageB = tf.sigmoid(x_logits)
     imageA  = inputs
-    shapeA = imageA.shape
-    if len(shapeA) > 4:
-        def ssim_multiscale_fn(images):
-            imageA, imageB = tf.split(images, 2, axis=0)
-            return tf.image.ssim_multiscale(imageA, imageB, max_val=1.0)
-        ssim_multiscale = tf.reduce_sum(tf.map_fn(ssim_multiscale_fn, tf.concat([imageA, imageB], axis=0)), axis=1)
-        ssim_multiscale = tf.reduce_mean(ssim_multiscale)
-    else:
-        ssim_multiscale = tf.reduce_mean(tf.image.ssim_multiscale(imageA, imageB, max_val=1.0))
+    shapeB = list(imageB.shape)
+    if len(shapeB) > 4:
+        shapeA = list(imageA.shape)
+        imageA = tf.reshape(imageA, tf.TensorShape([shapeA[0]*shapeA[1]]+shapeA[2:]))
+        imageB = tf.reshape(imageB, tf.TensorShape([shapeB[0] * shapeB[1]] + shapeB[2:]))
+
+    ssim_multiscale = tf.reduce_mean(tf.image.ssim_multiscale(imageA, imageB, max_val=1.0))
 
     return ssim_multiscale
 

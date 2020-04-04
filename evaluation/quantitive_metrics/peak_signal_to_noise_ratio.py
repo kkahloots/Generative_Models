@@ -1,8 +1,14 @@
 import tensorflow as tf
 from evaluation.shared import log10
 def psnr(inputs, x_logits):
-    gen_frames = tf.sigmoid(x_logits)
-    gt_frames  = inputs
+    imageB = tf.sigmoid(x_logits)
+    imageA = inputs
+    shapeB = list(imageB.shape)
+    if len(shapeB) > 4:
+        shapeA = list(imageA.shape)
+        imageA = tf.reshape(imageA, tf.TensorShape([shapeA[0]*shapeA[1]]+shapeA[2:]))
+        imageB = tf.reshape(imageB, tf.TensorShape([shapeB[0] * shapeB[1]] + shapeB[2:]))
+
     """
     Computes the Peak Signal to Noise Ratio error between the generated images and the ground
     truth images.
@@ -11,19 +17,10 @@ def psnr(inputs, x_logits):
     @param gt_frames: A tensor of shape [batch_size, height, width, 3]. The ground-truth frames for each frame in gen_frames.
     @return: A scalar tensor. The mean Peak Signal to Noise Ratio error over each frame in the batch.
     """
-    def psnr_fn(images):
-        imageA, imageB = tf.split(images, 2, axis=0)
-        shape_gen = tf.shape(imageB)
-        num_pixels = tf.cast(shape_gen[1] * shape_gen[2] * shape_gen[3], dtype='float')
-        square_diff = tf.square(imageA - imageB)
-        return square_diff, num_pixels
 
-    shape_gen = gen_frames.shape
-    if len(shape_gen) > 4:
-        square_diff, num_pixels = tf.map_fn(psnr_fn, tf.concat([gt_frames, gen_frames], axis=0))
-        square_diff = tf.reduce_sum(square_diff, axis=1)
-    else:
-        square_diff, num_pixels = psnr_fn(tf.concat([gt_frames, gen_frames], axis=0))
+    shapeB = tf.shape(imageB)
+    num_pixels = tf.cast(shapeB[1] * shapeB[2] * shapeB[3], dtype='float')
+    square_diff = tf.square(imageA - imageB)
 
     batch_errors = 10 * log10(1 / ((1 / num_pixels) * tf.reduce_sum(square_diff, [1, 2, 3])))
     return tf.reduce_mean(batch_errors)
