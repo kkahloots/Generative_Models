@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from graphs.builder import create_models, load_models
-from statistical.ae_losses import expected_loglikelihood
+from statistical.ae_losses import expected_loglikelihood_with_lower_bound
 
 def create_graph(name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params]  # ['inference',  'generative']
@@ -16,7 +16,7 @@ def create_losses():
     return dict(zip(['x_logits'], [bce]))
 
 def bce(inputs, x_logits):
-    reconstruction_loss = expected_loglikelihood(x_true=inputs, x_logits=x_logits)
+    reconstruction_loss = expected_loglikelihood_with_lower_bound(x_true=inputs, x_logits=x_logits)
     Px_xreconst = tf.reduce_mean(-reconstruction_loss)
     return -Px_xreconst
 

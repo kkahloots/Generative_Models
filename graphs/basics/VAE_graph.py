@@ -1,6 +1,6 @@
 import tensorflow as tf
 from graphs.basics.AE_graph import create_variables
-from statistical.ae_losses import expected_loglikelihood
+from statistical.ae_losses import expected_loglikelihood_with_lower_bound
 from statistical.pdfs import log_normal_pdf
 
 # Graph
@@ -38,7 +38,7 @@ def create_losses():
     }
 
 def logpx_z_fn(inputs, x_logits):
-    reconstruction_loss = expected_loglikelihood(x_logits=x_logits, x_true=inputs)
+    reconstruction_loss = expected_loglikelihood_with_lower_bound(x_logits=x_logits, x_true=inputs)
     logpx_z = tf.reduce_mean(-reconstruction_loss)
     return -logpx_z
 
