@@ -29,7 +29,10 @@ def create_variables(variables_params, model_name, restore=None):
     if restore:
         try:
             variables = load_models(restore, [model_name + '_' + var for var in variables_names])
-        except:
+
+        except Exception as e:
+            print(str(e))
+            print()
             log_message('Faild tp restore old models !', logging.ERROR)
 
     variables = variables or create_models(variables_params)
