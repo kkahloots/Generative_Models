@@ -16,13 +16,13 @@ def ssim_multiscale(inputs, x_logits):
 _MSSSIM_WEIGHTS = (0.0448, 0.2856, 0.3001, 0.2363, 0.1333)
 
 def tf_ssim_multiscale(img1,
-                    img2,
-                    max_val,
-                    power_factors=_MSSSIM_WEIGHTS,
-                    filter_size=11,
-                    filter_sigma=1.5,
-                    k1=0.01,
-                    k2=0.03):
+                       img2,
+                       max_val,
+                       power_factors=_MSSSIM_WEIGHTS,
+                       filter_size=11,
+                       filter_sigma=1.5,
+                       k1=0.01,
+                       k2=0.03):
     """Computes the MS-SSIM between img1 and img2.
     This function assumes that `img1` and `img2` are image batches, i.e. the last
     three dimensions are [height, width, channels].
