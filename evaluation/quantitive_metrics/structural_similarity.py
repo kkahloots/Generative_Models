@@ -15,7 +15,6 @@ def ssim_multiscale(inputs, x_logits):
 # Default values obtained by Wang et al.
 _MSSSIM_WEIGHTS = (0.0448, 0.2856, 0.3001, 0.2363, 0.1333)
 
-
 def tf_ssim_multiscale(img1,
                     img2,
                     max_val,
@@ -133,9 +132,10 @@ def tf_ssim_multiscale(img1,
     return tf.reduce_mean(ms_ssim, [-1])  # Avg over color channels.
 
 
-    ssmi = 1-tf.reduce_mean(tf.image.ssim_multiscale(imageA, imageB, max_val=1.0))
-    ssmi = 0.5*ssmi
-    return ssmi
+def _fspecial_gauss(size, sigma):
+    """Function to mimic the 'fspecial' gaussian MATLAB function."""
+    size = tf.convert_to_tensor(size, dtype='int32')
+    sigma = tf.convert_to_tensor(sigma)
 
     coords = tf.cast(tf.range(size), sigma.dtype)
     coords -= tf.cast(size - 1, sigma.dtype) / 2.0
