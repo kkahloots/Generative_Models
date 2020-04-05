@@ -6,7 +6,7 @@ import numpy as np
 epsilon=1e-4
 def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-2, max_iteration=100, batch_size=10):
     # prepare the inception v3 model
-    VGG16_model = VGG16(include_top=False, pooling='avg', input_shape=model.get_input_shape())
+    VGG16_model = VGG16(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
     VGG16_featues_fn = lambda x: VGG16_model(x)
     epsilon = 1e-2
 

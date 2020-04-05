@@ -26,3 +26,19 @@ def expected_loglikelihood(x_true, x_logits):
         axis=[1,2,3])
 
     return ell
+
+def prepare_mean_squared_error(inputs_flat_shape):
+    def mean_squared_error(x_true, x_logits):
+        x_true = tf.reshape(x_true, tf.TensorShape(inputs_flat_shape))
+        x_logits = tf.reshape(x_logits, tf.TensorShape(inputs_flat_shape))
+
+        return tf.losses.mean_squared_error(x_true, tf.sigmoid(x_logits))
+    return mean_squared_error
+
+def prepare_mean_absolute_error(inputs_flat_shape):
+    def mean_absolute_error(x_true, x_logits):
+        x_true = tf.reshape(x_true, tf.TensorShape(inputs_flat_shape))
+        x_logits = tf.reshape(x_logits, tf.TensorShape(inputs_flat_shape))
+
+        return tf.losses.mean_absolute_error(x_true, tf.sigmoid(x_logits))
+    return mean_absolute_error

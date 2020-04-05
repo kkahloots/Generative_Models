@@ -26,11 +26,11 @@ def predict_from_a_batch(model, data_generator, save_dir):
     original_data = next(data_generator)
     data_xt0 = original_data[0]
     data_xt1 = original_data[1]
-    data_xt0 = tf.reshape(data_xt0, [model.batch_size, -1,] + model.get_input_shape())
-    data_xt1 = tf.reshape(data_xt1, [model.batch_size, -1,] + model.get_input_shape())
+    data_xt0 = tf.reshape(data_xt0, [model.batch_size, -1,] + model.get_inputs_shape())
+    data_xt1 = tf.reshape(data_xt1, [model.batch_size, -1,] + model.get_inputs_shape())
 
     data_xt0_pred = model.predict(original_data[0])
-    data_xt0_pred = tf.reshape(data_xt0_pred, [model.batch_size, -1,] + model.get_input_shape())
+    data_xt0_pred = tf.reshape(data_xt0_pred, [model.batch_size, -1,] + model.get_inputs_shape())
 
     for i, (xt0, xt1, xt0_pred) in enumerate(zip(data_xt0, data_xt1, data_xt0_pred)):
         xt0 = tf.concat([x for x in xt0], axis=1).numpy()

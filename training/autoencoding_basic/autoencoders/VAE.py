@@ -77,7 +77,6 @@ class VAE(autoencoder):
             self,
             optimizer=RAdam(),
             loss=None,
-            metrics=create_metrics(),
             **kwargs
     ):
         ae_losses = create_losses()
@@ -85,11 +84,16 @@ class VAE(autoencoder):
         for k in loss:
             ae_losses.pop(k)
         self.ae_losses = {**ae_losses, **loss}
-        self.ae_metrics = metrics
+
+        if 'metrics' in kwargs.keys():
+            self.ae_metrics = kwargs.pop('metrics', None)
+        else:
+            self.ae_metrics = create_metrics([self.batch_size] + self.get_inputs_shape())
+
         tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
 
-    def get_input_shape(self):
+    def get_inputs_shape(self):
         return list(self.get_variables()['inference_mean'].inputs[0].shape[1:])
 
     def batch_cast(self, batch):

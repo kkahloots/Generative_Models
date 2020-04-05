@@ -12,7 +12,7 @@ def inception_score(model, tolerance_threshold=1e-6, max_iteration=500):
         return np.exp(kl)
 
     # prepare the inception v3 model
-    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=model.get_input_shape())
+    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
     inception_predictions = lambda x: inception_model.predict(inception_preprocess_input(x))
 
     # prepare the ae model random_images_generator
@@ -70,7 +70,7 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
         return fid
 
     # prepare the inception v3 model
-    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=model.get_input_shape())
+    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
     inception_predictions = lambda x: inception_model.predict(inception_preprocess_input(x))
 
     def inception_predictions_generator():

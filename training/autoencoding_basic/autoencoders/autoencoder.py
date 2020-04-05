@@ -64,15 +64,20 @@ class autoencoder(tf.keras.Model):
             self,
             optimizer=RAdam(),
             loss=None,
-            metrics=create_metrics(),
             **kwargs
     ):
+
         ae_losses = create_losses()
         loss = loss or {}
         for k in loss:
             ae_losses.pop(k)
         self.ae_losses = {**ae_losses, **loss}
-        self.ae_metrics = metrics
+
+        if 'metrics' in kwargs.keys():
+            self.ae_metrics = kwargs.pop('metrics', None)
+        else:
+            self.ae_metrics = create_metrics([self.batch_size] + self.get_inputs_shape())
+
         tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
 
@@ -130,14 +135,14 @@ class autoencoder(tf.keras.Model):
         file_Name = os.path.join(filepath, self.name)
         self.save_models(file_Name, self.get_variables())
 
-    def get_input_shape(self):
+    def get_inputs_shape(self):
         return list(self.get_variables()['inference'].inputs[0].shape[1:])
 
     def __encode__(self, **kwargs):
         inputs = kwargs['inputs']
         for k, v in  inputs.items():
-            if inputs[k].shape == self.get_input_shape():
-                inputs[k] = tf.reshape(inputs[k], (1, ) + self.get_input_shape())
+            if inputs[k].shape == self.get_inputs_shape():
+                inputs[k] = tf.reshape(inputs[k], (1, ) + self.get_inputs_shape())
             inputs[k] = tf.cast(inputs[k], tf.float32)
         kwargs['model']  = self.get_variable
         kwargs['latents_shape'] = (self.batch_size, self.latents_dim)
@@ -149,7 +154,7 @@ class autoencoder(tf.keras.Model):
 
     # autoencoder function
     def decode(self, latents):
-        return self.decode_fn(model=self.get_variable, latents=latents, input_shape=self.get_input_shape())
+        return self.decode_fn(model=self.get_variable, latents=latents, input_shape=self.get_inputs_shape())
 
     # autoencoder function
     def reconstruct(self, images):
@@ -163,7 +168,7 @@ class autoencoder(tf.keras.Model):
         latents_shape = [num_images, self.latents_dim]
         random_latents = tf.random.normal(shape=latents_shape)
         generated = self.generate_sample(model=self.get_variable,
-                                         input_shape=self.get_input_shape(),
+                                         input_shape=self.get_inputs_shape(),
                                          latents_shape=latents_shape,
                                          eps=random_latents)
         return generated
