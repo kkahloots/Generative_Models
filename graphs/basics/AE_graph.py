@@ -2,6 +2,9 @@ import tensorflow as tf
 
 from graphs.builder import create_models, load_models
 from statistical.ae_losses import expected_loglikelihood_with_lower_bound
+import logging
+from utils.reporting.logging import log_message
+
 
 def create_graph(name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params]  # ['inference',  'generative']
@@ -22,10 +25,15 @@ def bce(inputs, x_logits):
 
 def create_variables(variables_params, model_name, restore=None):
     variables_names = [variables['name'] for variables in variables_params]
-    if restore is None:
-        variables = create_models(variables_params)
-    else:
-        variables = load_models(restore, [model_name + '_' + var for var in variables_names])
+    variables = None
+    if restore:
+        try:
+            variables = load_models(restore, [model_name + '_' + var for var in variables_names])
+        except:
+            log_message('Faild tp restore old models !', logging.ERROR)
+
+    variables = variables or create_models(variables_params)
+
     return variables
 
 def encode_fn(**kwargs):
