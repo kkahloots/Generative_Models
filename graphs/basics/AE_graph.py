@@ -1,52 +1,61 @@
 import tensorflow as tf
 
-from graphs.builder import make_models, load_models
-from stats.losses import reconstuction_loss
+from graphs.builder import create_models, load_models
+from statistical.ae_losses import expected_loglikelihood_with_lower_bound
+import logging
+from utils.reporting.logging import log_message
 
-LOSS_NAME= 'bce'
 
-def make_ae(model_name, variables_params, restore=None):
+def create_graph(name, variables_params, restore=None):
     variables_names = [variables['name'] for variables in variables_params]  # ['inference',  'generative']
-    variables = make_variables(variables_params=variables_params, model_name=model_name, restore=restore)
+    variables = create_variables(variables_params=variables_params, model_name=name, restore=restore)
 
     def get_variables():
         return dict(zip(variables_names, variables))
+    return get_variables
 
-    def loss_functions():
-        return dict(zip([LOSS_NAME], [training_loss]))
 
-    return get_variables, loss_functions
+def create_losses():
+    return dict(zip(['x_logits'], [bce]))
 
-@tf.function
-def training_loss(inputs, predictions):
-    x_logit = predictions['x_logit']
-    reconstruction_loss = reconstuction_loss(true_x=inputs, pred_x=x_logit)
+def bce(inputs, x_logits):
+    reconstruction_loss = expected_loglikelihood_with_lower_bound(x_true=inputs, x_logits=x_logits)
     Px_xreconst = tf.reduce_mean(-reconstruction_loss)
-    return Px_xreconst
+    return -Px_xreconst
 
-def make_variables(variables_params, model_name, restore=None):
+def create_variables(variables_params, model_name, restore=None):
     variables_names = [variables['name'] for variables in variables_params]
-    if restore is None:
-        variables = make_models(variables_params)
-    else:
-        variables = load_models(restore, [model_name + '_' + var for var in variables_names])
+    variables = None
+    if restore:
+        try:
+            variables = load_models(restore, [model_name + '_' + var for var in variables_names])
+
+        except Exception as e:
+            print(str(e))
+            print()
+            log_message('Faild tp restore old models !', logging.ERROR)
+
+    variables = variables or create_models(variables_params)
+
     return variables
 
-def encode(model, inputs):
+def encode_fn(**kwargs):
+    model = kwargs['model']
+    inputs = kwargs['inputs']
     z = model('inference', [inputs])
-    return z
+    return {
+        'z_latents': z
+    }
 
-def decode(model, latent, inputs_shape, apply_sigmoid=False):
-    logits = model('generative', [latent])
+def decode_fn(model, latents, input_shape, apply_sigmoid=False):
+    x_logits = model('generative', [latents])
     if apply_sigmoid:
-        probs = tf.sigmoid(logits)
-        return tf.reshape(probs, shape=[-1] + [*inputs_shape])
-    return tf.reshape(logits, shape=[-1] + [*inputs_shape])
+        probs = tf.sigmoid(x_logits)
+        return tf.reshape(tensor=probs, shape=[-1] + [*input_shape], name='x_probablities')
+    return tf.reshape(tensor=x_logits, shape=[-1] + [*input_shape], name='x_logits')
 
-@tf.function
-def generate_sample(model, inputs_shape, latent_shape, eps=None):
+def generate_sample(model, input_shape, latents_shape, eps=None):
     if eps is None:
-        eps = tf.random.normal(shape=latent_shape)
-    generated = decode(model=model, latent=eps, inputs_shape=inputs_shape, apply_sigmoid=True)
+        eps = tf.random.normal(shape=latents_shape)
+    generated = decode_fn(model=model, latents=eps, input_shape=input_shape, apply_sigmoid=True)
     return generated
-

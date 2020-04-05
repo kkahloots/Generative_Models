@@ -18,6 +18,7 @@
 import os
 from data.gt_load import gt_data, util
 import numpy as np
+import dask.array as da
 from six.moves import range
 import tensorflow as tf
 
@@ -48,23 +49,23 @@ class Shapes3D(gt_data.GroundTruthData):
         with tf.io.gfile.GFile(data_path, "rb") as f:
             # Data was saved originally using python2, so we need to set the encoding.
             data = np.load(f, encoding="latin1")
-        images = data["images"]
-        labels = data["labels"]
+        images = da.from_array(data["images"])
+        labels = da.from_array(data["labels"])
         n_samples = np.prod(images.shape[0:6])
         self.images = (
             images.reshape([n_samples, 64, 64, 3]).astype(np.float32) / 255.)
         features = labels.reshape([n_samples, 6])
         self.factor_sizes = [10, 10, 10, 8, 4, 15]
-        self.latent_factor_indices = list(range(6))
+        self.latents_factor_indices = list(range(6))
         self.num_total_factors = features.shape[1]
         self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                        self.latent_factor_indices)
+                                                        self.latents_factor_indices)
         self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
             self.factor_sizes)
 
     @property
     def num_factors(self):
-        return self.state_space.num_latent_factors
+        return self.state_space.num_latents_factors
 
     @property
     def factors_num_values(self):
@@ -76,7 +77,7 @@ class Shapes3D(gt_data.GroundTruthData):
 
     def sample_factors(self, num, random_state):
         """Sample a batch of factors Y."""
-        return self.state_space.sample_latent_factors(num, random_state)
+        return self.state_space.sample_latents_factors(num, random_state)
 
     def sample_observations_from_factors(self, factors, random_state):
         all_factors = self.state_space.sample_all_factors(factors, random_state)

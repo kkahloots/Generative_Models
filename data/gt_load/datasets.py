@@ -35,23 +35,23 @@ def load(dataset_name, dataset_path):
 
     if dataset_name == "dsprites_full":
         DSP_PATH = os.path.join(dataset_path, 'dsprites', 'dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
-        return dsprites.DSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latent_factor_indices=[1, 2, 3, 4, 5])
+        return dsprites.DSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latents_factor_indices=[1, 2, 3, 4, 5])
 
     elif dataset_name == "dsprites_noshape":
         DSP_PATH = os.path.join(dataset_path, 'dsprites', 'dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
-        return dsprites.DSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latent_factor_indices=[2, 3, 4, 5])
+        return dsprites.DSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latents_factor_indices=[2, 3, 4, 5])
 
     elif dataset_name == "color_dsprites":
         DSP_PATH = os.path.join(dataset_path, 'dsprites', 'dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
-        return dsprites.ColorDSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latent_factor_indices=[1, 2, 3, 4, 5])
+        return dsprites.ColorDSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latents_factor_indices=[1, 2, 3, 4, 5])
 
     elif dataset_name == "noisy_dsprites":
         DSP_PATH = os.path.join(dataset_path, 'dsprites', 'dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
-        return dsprites.NoisyDSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latent_factor_indices=[1, 2, 3, 4, 5])
+        return dsprites.NoisyDSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latents_factor_indices=[1, 2, 3, 4, 5])
 
     elif dataset_name == "scream_dsprites":
         DSP_PATH = os.path.join(dataset_path, 'dsprites', 'dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz')
-        return dsprites.ScreamDSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latent_factor_indices=[1, 2, 3, 4, 5])
+        return dsprites.ScreamDSprites(data_path=DSP_PATH, scream_path=SCREAM_PATH, latents_factor_indices=[1, 2, 3, 4, 5])
 
     elif dataset_name == "smallnorb":
         SMALLNORB_TEMPLATE = os.path.join(

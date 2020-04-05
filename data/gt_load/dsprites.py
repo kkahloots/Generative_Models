@@ -18,6 +18,7 @@
 import os
 from data.gt_load import gt_data, util
 import numpy as np
+import dask.array as da
 import PIL
 from six.moves import range
 import tensorflow as tf
@@ -38,35 +39,35 @@ class DSprites(gt_data.GroundTruthData):
     4 - position y (32 different values)
     """
 
-    def __init__(self, data_path, scream_path, latent_factor_indices=None):
+    def __init__(self, data_path, scream_path, latents_factor_indices=None):
         # By default, all factors (including shape) are considered ground truth
         # factors.
         self.scream_path = scream_path
         self.data_path = data_path
 
-        if latent_factor_indices is None:
-          latent_factor_indices = list(range(6))
-        self.latent_factor_indices = latent_factor_indices
+        if latents_factor_indices is None:
+          latents_factor_indices = list(range(6))
+        self.latents_factor_indices = latents_factor_indices
         self.data_shape = [64, 64, 1]
         # Load the data so that we can sample from it.
         with tf.io.gfile.GFile(self.data_path, "rb") as data_file:
             # Data was saved originally using python2, so we need to set the encoding.
             data = np.load(data_file, encoding="latin1", allow_pickle=True)
-            self.images = np.array(data["imgs"])
-            self.factor_sizes = np.array(
-                data["metadata"][()]["latents_sizes"], dtype=np.int64)
+            self.images = da.from_array(data["imgs"], chunks=100)
+            self.factor_sizes = da.from_array(
+                data["metadata"][()]["latents_sizes"], chunks=100)
         self.full_factor_sizes = [1, 3, 6, 40, 32, 32]
         self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
             self.factor_sizes)
         self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
-                                                        self.latent_factor_indices)
+                                                        self.latents_factor_indices)
     @property
     def num_factors(self):
-        return self.state_space.num_latent_factors
+        return self.state_space.num_latents_factors
 
     @property
     def factors_num_values(self):
-        return [self.full_factor_sizes[i] for i in self.latent_factor_indices]
+        return [self.full_factor_sizes[i] for i in self.latents_factor_indices]
 
     @property
     def observation_shape(self):
@@ -74,7 +75,7 @@ class DSprites(gt_data.GroundTruthData):
 
     def sample_factors(self, num, random_state):
         """Sample a batch of factors Y."""
-        return self.state_space.sample_latent_factors(num, random_state)
+        return self.state_space.sample_latents_factors(num, random_state)
 
     def sample_observations_from_factors(self, factors, random_state):
         return self.sample_observations_from_factors_no_color(factors, random_state)
@@ -103,8 +104,8 @@ class ColorDSprites(DSprites):
     4 - position y (32 different values)
     """
 
-    def __init__(self, data_path, scream_path, latent_factor_indices=None):
-        DSprites.__init__(self, data_path, scream_path, latent_factor_indices)
+    def __init__(self, data_path, scream_path, latents_factor_indices=None):
+        DSprites.__init__(self, data_path, scream_path, latents_factor_indices)
         self.data_shape = [64, 64, 3]
 
     def sample_observations_from_factors(self, factors, random_state):
@@ -135,8 +136,8 @@ class NoisyDSprites(DSprites):
     4 - position y (32 different values)
     """
 
-    def __init__(self, data_path, scream_path, latent_factor_indices=None):
-        DSprites.__init__(self, data_path, scream_path, latent_factor_indices)
+    def __init__(self, data_path, scream_path, latents_factor_indices=None):
+        DSprites.__init__(self, data_path, scream_path, latents_factor_indices)
         self.data_shape = [64, 64, 3]
 
     def sample_observations_from_factors(self, factors, random_state):
@@ -162,8 +163,8 @@ class ScreamDSprites(DSprites):
     4 - position y (32 different values)
     """
 
-    def __init__(self, data_path, scream_path, latent_factor_indices=None):
-        DSprites.__init__(self, data_path, scream_path, latent_factor_indices)
+    def __init__(self, data_path, scream_path, latents_factor_indices=None):
+        DSprites.__init__(self, data_path, scream_path, latents_factor_indices)
         self.data_shape = [64, 64, 3]
         with tf.io.gfile.GFile(self.scream_path, "rb") as f:
             scream = PIL.Image.open(f)

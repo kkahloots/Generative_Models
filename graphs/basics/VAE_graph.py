@@ -1,58 +1,51 @@
 import tensorflow as tf
+from graphs.basics.AE_graph import create_variables
+from statistical.ae_losses import expected_loglikelihood_with_lower_bound
+from statistical.pdfs import log_normal_pdf
 
-from graphs.builder import make_models, load_models
-from stats.losses import reconstuction_loss
-from stats.pdfs import log_normal_pdf
-
-def make_vae(model_name, variables_params, restore=None):
-    variables_names = [variables['name'] for variables in variables_params] #['inference',  'generative']
-    variables = make_variables(variables_params=variables_params, model_name=model_name, restore=restore)
+# Graph
+def create_graph(name, variables_params, restore=None):
+    variables_names = [variables['name'] for variables in variables_params] #['inference_mean',  'inference_logvariance', 'generative']
+    variables = create_variables(variables_params=variables_params, model_name=name, restore=restore)
 
     def get_variables():
         return dict(zip(variables_names, variables))
+    return get_variables
 
-    def loss_functions():
-        return {'logpx_z': compute_logpx_z, 'logpz': compute_logpz, 'logqz_x': compute_logqz_x}
+def reparameterize(mean, logvariance, latents_shape):
+    eps = tf.random.normal(shape=latents_shape)
+    return tf.add(x=eps * tf.exp(logvariance * .5) , y=mean, name='z_latents')
 
-    return get_variables, loss_functions
+def encode_fn(**kwargs):
+    model = kwargs['model']
+    inputs = kwargs['inputs']
+    latents_shape = kwargs['latents_shape']
+    mean, logvariance = model('inference_mean', [inputs['x_mean']]), model('inference_logvariance', [inputs['x_logvariance']])
+    z = reparameterize(mean, logvariance, latents_shape)
+    return {
+        'z_latents': z,
+        'inference_mean': mean,
+        'inference_logvariance': logvariance
+    }
 
-@tf.function
-def compute_logpx_z(inputs, predictions):
-    x_logit = predictions['x_logit']
-    x = inputs
-    reconstruction_loss = reconstuction_loss(pred_x=x_logit, true_x=x)
+# losses
+def create_losses():
+    return {
+        'x_logits': logpx_z_fn,
+        'z_latents': logpz_fn,
+        'x_logpdf': logqz_x_fn,
+
+    }
+
+def logpx_z_fn(inputs, x_logits):
+    reconstruction_loss = expected_loglikelihood_with_lower_bound(x_logits=x_logits, x_true=inputs)
     logpx_z = tf.reduce_mean(-reconstruction_loss)
-    return logpx_z
+    return -logpx_z
 
-@tf.function
-def compute_logpz(inputs, predictions):
-    z = predictions['latent']
-    logpz = tf.reduce_mean(log_normal_pdf(z, 0., 0.))
-    return logpz
+def logpz_fn(inputs, latents):
+    logpz = tf.reduce_mean(log_normal_pdf(latents, 0., 0.))
+    return -logpz
 
-@tf.function
-def compute_logqz_x(inputs, predictions):
-    x_logit, z, mean, logvar = predictions['x_logit'], predictions['latent'], predictions['mean'], predictions['logvar']
-    logqz_x = tf.reduce_mean(-log_normal_pdf(z, mean, logvar))
-    return logqz_x
-
-def make_variables(variables_params, model_name, restore=None):
-    variables_names = [variables['name'] for variables in variables_params]
-    variables = [None for _ in range(len(variables_names))]
-    if restore is None:
-        variables = make_models(variables_params)
-    else:
-        variables = load_models(restore, [model_name +'_' + var for var in variables_names])
-    return variables
-
-def reparameterize(mean, logvar):
-    eps = tf.random.normal(shape=mean.shape)
-    return eps * tf.exp(logvar * .5) + mean
-
-def encode(model, inputs):
-    mean, logvar = model('encoder_mean', [inputs]), model('encoder_logvar', [inputs])
-    z = reparameterize(mean, logvar)
-    return z, mean, logvar
-
-
-
+def logqz_x_fn(inputs, logpdf):
+    logqz_x = tf.reduce_mean(-logpdf)
+    return -logqz_x

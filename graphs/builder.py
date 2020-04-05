@@ -1,11 +1,12 @@
+import logging
+import os
+
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-import numpy as np
-import os
-import logging
+
 from utils.reporting.logging import log_message
 from utils.swe.codes import properties, Layer_CD, Activate_CD, Messages_CD, Sampling_CD
-from collections.abc import Iterable
+
 
 def create_layer(layer_cd, lay_dim, kernel_shape=None, addBatchNorm=True, addDropout=True, activate=None):
     assert layer_cd in properties(Layer_CD), Messages_CD.USV.format(layer_cd, 'Layers', properties(Layer_CD))
@@ -58,52 +59,72 @@ def create_sequence(lay_shapes, isConv=True, kernel_shape=3, sampling_rate=2, ad
 
     return x
 
-def make_variable(inputs_shape, outputs_shape, layers=[], name=None):
-    if isinstance(outputs_shape, Iterable):
-        outputs_shape = np.prod(outputs_shape)
+def create_variable(inputs_shape, outputs_shape, layers=[], name=None):
     variable = \
         tf.keras.Sequential(
         name = name,
         layers=
         [
-            tf.keras.layers.Input(shape=inputs_shape),
+            tf.keras.layers.Input(shape=inputs_shape, name=name+'_inputs', dtype='float32'),
         ]
         +
             layers
         +
         [
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(outputs_shape),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(rate=0.25),
             tf.keras.layers.ActivityRegularization(l1=1e-6, l2=1e-6),
-            tf.keras.layers.Activation(None, dtype='float32')
+            tf.keras.layers.Activation(None, name=name+'_outputs', dtype='float32')
         ]
 
     )
-    return variable
+    return tf.keras.Model(name=variable.name, inputs=variable.inputs, outputs=variable.outputs)
 
 def save_models(file_name, variables):
     for name, variable in variables.items():
-        variable.save(file_name + '_' + name + '.h5', overwrite=True)
+        variable.save(file_name + '_' + name + '.hdf5', overwrite=True)
 
 def load_models(file_name, variables_names):
     log_message('Restore old models ...', logging.DEBUG)
-    vars = []
+    variables = []
     for name in variables_names:
-        var = os.path.join(file_name, name+'.h5')
-        variable = load_model(var)
-        vars += [variable]
+        variable_path = os.path.join(file_name, name+'.hdf5')
+        variable = load_model(variable_path, compile=False)
+        variables += [variable]
         log_message(variable.summary(), logging.WARN)
-    return vars
+    return variables
 
-def make_models(variables_params):
+def create_models(variables_params):
     vars = []
     for params in variables_params:
-        var = make_variable(**params)
+        var = create_variable(**params)
         log_message(var.summary(), logging.WARN)
         vars += [var]
     return vars
 
 def run_variable(variable, param):
     return variable(*param)
+
+def layer_stuffing(model):
+    for layer in model.layers:
+        if not isinstance(layer, tf.keras.layers.Activation):
+            if hasattr(layer, 'activation'):
+                layer.activation = tf.keras.activations.elu
+
+def clone_model(old_model, new_name, restore=None):
+    if restore:
+        log_message('Restore old models ...', logging.DEBUG)
+        variable_path = os.path.join(restore, new_name+'.hdf5')
+        variable = load_model(variable_path, compile=False)
+
+    else:
+        temp_layers = tf.keras.models.clone_model(old_model).layers
+        temp_layers.append(tf.keras.layers.Flatten())
+        temp_layers.append(tf.keras.layers.Dense(units=1, activation='linear', name=new_name+'_outputs'))
+        temp_layers = tf.keras.Sequential(temp_layers)
+        variable = tf.keras.Model(
+            name=new_name,
+            inputs=temp_layers.inputs,
+            outputs=temp_layers.outputs
+        )
+    return variable

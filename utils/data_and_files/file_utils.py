@@ -5,7 +5,7 @@ import csv
 import logging
 from utils.reporting.logging import log_message
 
-def make_random_string(stringLength=10):
+def create_random_string(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
@@ -60,16 +60,10 @@ def create_if_not_exist(directories):
         except Exception as err:
             log_message("Creating directory {},  error: {}".format(directory, err), logging.ERROR)
 
-def log(file_name, message, printed=True):
-    header = file_name.split('\\')[-1].split('_')[0]
+def log(file_name, message):
+    header = file_name.split(os.path.sep)[-1].split('_')[0]
     fieldnames = [*message]
-    if printed:
-        msg = header
-        for k, v in message.items():
-            msg += '\n    {}: {}'.format(k, v)
-        log_message(msg, logging.DEBUG)
-
-    with open(file_name+'.csv', mode='a') as csv_file:
+    with open(file_name+'.csv', mode='a', newline='') as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         if message['Epoch']==0:
             writer.writeheader()
