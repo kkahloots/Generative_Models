@@ -22,7 +22,6 @@ def sharpdiff(inputs, x_logits):
         imageA = tf.reshape(imageA, tf.TensorShape([shapeA[0]*shapeA[1]]+shapeA[2:]))
         imageB = tf.reshape(imageB, tf.TensorShape([shapeB[0] * shapeB[1]] + shapeB[2:]))
 
-
     shapeB = list(imageB.shape)
     num_pixels = tf.cast(x=shapeB[1] * shapeB[2] * shapeB[3], dtype='float')
     if shapeB[3] == 1:
