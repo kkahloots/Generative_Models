@@ -212,15 +212,15 @@ def prepare_ssim_multiscale(inputs_flat_shape):
     def _ssim_helper(x, y, reducer, max_val, compensation=1.0, k1=0.01, k2=0.03):
         """Helper function for computing SSIM.
           SSIM estimates covariances with weighted sums.  The default parameters
-          use a biased estimate of the covariance:
+          use a biased estimate of the covariance_regularizer:
           Suppose `reducer` is a weighted sum, then the mean estimators are
             \mu_x = \sum_i w_i x_i,
             \mu_y = \sum_i w_i y_i,
-          where w_i's are the weighted-sum weights, and covariance estimator is
+          where w_i's are the weighted-sum weights, and covariance_regularizer estimator is
             cov_{xy} = \sum_i w_i (x_i - \mu_x) (y_i - \mu_y)
-          with assumption \sum_i w_i = 1. This covariance estimator is biased, since
+          with assumption \sum_i w_i = 1. This covariance_regularizer estimator is biased, since
             E[cov_{xy}] = (1 - \sum_i w_i ^ 2) Cov(X, Y).
-          For SSIM measure with unbiased covariance estimators, pass as `compensation`
+          For SSIM measure with unbiased covariance_regularizer estimators, pass as `compensation`
           argument (1 - \sum_i w_i ^ 2).
           Arguments:
             x: First set of images.
@@ -263,4 +263,8 @@ def prepare_ssim_multiscale(inputs_flat_shape):
         # SSIM score is the product of the luminance and contrast-structure measures.
         return luminance, cs
 
+    nchannels = inputs_flat_shape[-1]
+    if nchannels==1:
+        def ssim(x, y): return tf.image.ssim(x, y, max_val=1.0)
+        return ssim
     return ssim_multiscale

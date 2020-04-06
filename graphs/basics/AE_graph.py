@@ -1,8 +1,9 @@
+import logging
+
 import tensorflow as tf
 
 from graphs.builder import create_models, load_models
 from statistical.ae_losses import expected_loglikelihood_with_lower_bound
-import logging
 from utils.reporting.logging import log_message
 
 
@@ -14,11 +15,10 @@ def create_graph(name, variables_params, restore=None):
         return dict(zip(variables_names, variables))
     return get_variables
 
-
 def create_losses():
-    return dict(zip(['x_logits'], [bce]))
+    return dict(zip(['x_logits'], [cross_entropy]))
 
-def bce(inputs, x_logits):
+def cross_entropy(inputs, x_logits):
     reconstruction_loss = expected_loglikelihood_with_lower_bound(x_true=inputs, x_logits=x_logits)
     Px_xreconst = tf.reduce_mean(-reconstruction_loss)
     return -Px_xreconst

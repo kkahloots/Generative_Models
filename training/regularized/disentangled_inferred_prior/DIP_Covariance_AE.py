@@ -1,7 +1,47 @@
 import tensorflow as tf
+from keras_radam import RAdam
+from graphs.regularized.DIP_AE_graph import create_losses
+from evaluation.quantitive_metrics.metrics import create_metrics
 from training.autoencoding_basic.autoencoders.autoencoder import autoencoder as basicAE
 
 class DIP_Cov(basicAE):
+
+    # override function
+    def compile(
+            self,
+            optimizer=RAdam(),
+            loss=None,
+            **kwargs
+    ):
+
+        ae_losses = create_losses()
+        loss = loss or {}
+        for k in loss:
+            ae_losses.pop(k)
+        self.ae_losses = {**ae_losses, **loss}
+
+        if 'metrics' in kwargs.keys():
+            self.ae_metrics = kwargs.pop('metrics', None)
+        else:
+            self.ae_metrics = create_metrics([self.batch_size] + self.get_inputs_shape()[-3:])
+
+        tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
+        print(self.summary())
+
+
+    def __encode__(self, **kwargs):
+        inputs = kwargs['inputs']
+        for k, v in  inputs.items():
+            if inputs[k].shape == self.get_inputs_shape():
+                inputs[k] = tf.reshape(inputs[k], (1, ) + self.get_inputs_shape())
+            inputs[k] = tf.cast(inputs[k], tf.float32)
+        kwargs['model']  = self.get_variable
+        kwargs['latents_shape'] = (self.batch_size, self.latents_dim)
+
+        encoded = self.encode_fn(**kwargs)
+        covariance_regularizer = self.regularize(encoded['z_latents'])
+        return {**encoded, 'covariance_regularized': covariance_regularizer}
+
     def __init_autoencoder__(self, **kwargs):
         #  DIP configuration
         self.lambda_d = 5
@@ -10,13 +50,13 @@ class DIP_Cov(basicAE):
 
         # connect the graph x' = decode(encode(x))
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
-        latents = self.__encode__(inputs=inputs_dict)
-        x_logits = self.decode(latents)
+        encoded = self.__encode__(inputs=inputs_dict)
+        x_logits = self.decode({'z_latents': encoded['z_latents']})
+        covariance_regularizer = encoded['covariance_regularized']
 
-        regularizer = self.create_regularizer(latents['z_latents'])
         outputs_dict = {
             'x_logits': x_logits,
-            #'regularizer': regularizer
+            'covariance_regularized': covariance_regularizer
         }
         tf.keras.Model.__init__(
             self,
@@ -32,25 +72,38 @@ class DIP_Cov(basicAE):
         for i, output_name in enumerate(self.output_names):
             if 'x_logits' in output_name:
                 self.output_names[i] = 'x_logits'
-            elif 'regularizer' in output_name:
-                self.output_names[i] = 'regularizer'
+            elif 'covariance_regularized' in output_name:
+                self.output_names[i] = 'covariance_regularized'
             else:
                 print(self.output_names[i])
 
+    def batch_cast(self, batch):
+        if self.input_kw:
+            x = tf.cast(batch[self.input_kw], dtype=tf.float32)/self.input_scale
+        else:
+            x = tf.cast(batch, dtype=tf.float32)/self.input_scale
+
+        return {
+                   'inference_inputs': x,
+               }, \
+               {
+                   'x_logits': x,
+                   'covariance_regularized': 0.0
+               }
 
     '''
     ------------------------------------------------------------------------------
                                          DIP_Covarance OPERATIONS
     ------------------------------------------------------------------------------
     '''
-    def create_regularizer(self, latent_mean, latent_logvar=None):
+    def regularize(self, latent_mean, latent_logvar=None):
         cov_latent_mean = self.compute_covariance_latent_mean(latent_mean)
 
         # Eq 6 page 4
         # mu = z_mean is [batch_size, num_latent]
         # Compute cov_p(x) [mu(x)] = E[mu*mu^T] - E[mu]E[mu]^T]
         cov_dip_regularizer = tf.add(self.regularize_diag_off_diag_dip(cov_latent_mean, self.lambda_d, self.d), 0.0,
-                                     name='regularizer')
+                                     name='covariance_regularized')
 
         return cov_dip_regularizer
 
@@ -58,7 +111,7 @@ class DIP_Cov(basicAE):
         """
         :param latent_mean:
         :return:
-        Computes the covariance of latent_mean.
+        Computes the covariance_regularizer of latent_mean.
         Uses cov(latent_mean) = E[latent_mean*latent_mean^T] - E[latent_mean]E[latent_mean]^T.
         Args:
           latent_mean: Encoder mean, tensor of size [batch_size, num_latent].
@@ -75,7 +128,7 @@ class DIP_Cov(basicAE):
 
     def regularize_diag_off_diag_dip(self, covariance_matrix, lambda_od, lambda_d):
         """
-        Compute on and off diagonal regularizers for DIP_Covarance-VAE models.
+        Compute on and off diagonal covariance_regularizer for DIP_Covarance-VAE models.
         Penalize deviations of covariance_matrix from the identity matrix. Uses
         different weights for the deviations of the diagonal and off diagonal entries.
         Args:
@@ -90,5 +143,4 @@ class DIP_Cov(basicAE):
         dip_regularizer = tf.add(
               lambda_od * tf.reduce_sum(covariance_matrix_off_diagonal**2),
               lambda_d * tf.reduce_sum((covariance_matrix_diagonal - 1)**2))
-
         return dip_regularizer

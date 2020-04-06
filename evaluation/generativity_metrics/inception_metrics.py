@@ -57,9 +57,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
                      for generated samples.
             -- mu2(inception_mean)  : The sample mean over activations of the pool_3 layer, precalcualted
                        on an representive data set.
-            -- sigma1(generated_sigma): The covariance matrix over activations of the pool_3 layer for
+            -- sigma1(generated_sigma): The covariance_regularizer matrix over activations of the pool_3 layer for
                        generated samples.
-            -- sigma2(inception_sigma): The covariance matrix over activations of the pool_3 layer,
+            -- sigma2(inception_sigma): The covariance_regularizer matrix over activations of the pool_3 layer,
                        precalcualted on an representive data set.
            Returns:
             --   : The Frechet Distance.
