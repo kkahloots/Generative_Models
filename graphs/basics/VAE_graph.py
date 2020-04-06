@@ -37,6 +37,14 @@ def create_losses():
 
     }
 
+def create_tlosses(log_pdf_fn):
+    return {
+        'x_logits': logpx_z_fn,
+        'z_latents': perpare_tlogpz_fn(log_pdf_fn),
+        'x_logpdf': logqz_x_fn,
+
+    }
+
 def logpx_z_fn(inputs, x_logits):
     reconstruction_loss = expected_loglikelihood_with_lower_bound(x_logits=x_logits, x_true=inputs)
     logpx_z = tf.reduce_mean(-reconstruction_loss)
@@ -45,6 +53,12 @@ def logpx_z_fn(inputs, x_logits):
 def logpz_fn(inputs, latents):
     logpz = tf.reduce_mean(log_normal_pdf(latents, 0., 0.))
     return -logpz
+
+def perpare_tlogpz_fn(log_pdf_fn):
+    def tlogpz_fn(inputs, latents):
+        logpz = tf.reduce_mean(log_pdf_fn(latents, 0., 0.))
+        return -logpz
+    return tlogpz_fn
 
 def logqz_x_fn(inputs, logpdf):
     logqz_x = tf.reduce_mean(-logpdf)
