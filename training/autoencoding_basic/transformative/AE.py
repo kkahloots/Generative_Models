@@ -1,7 +1,5 @@
 
 import tensorflow as tf
-
-from graphs.basics.AE_graph import create_graph, encode_fn
 from training.autoencoding_basic.autoencoders.autoencoder import autoencoder as basicAE
 
 class autoencoder(basicAE):
