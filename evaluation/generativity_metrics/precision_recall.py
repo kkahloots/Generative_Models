@@ -142,8 +142,8 @@ def precision_score(model, data_generator, nhood_size=3, row_batch_size=10000, c
             latents_t = np.array([ln for _ in range(latents_real.shape[0])])
             lerp_t = np.random.uniform()
 
-            latents_e0 = slerp(latents_real[0::2], latents_t[1::2], lerp_t)
-            latents_e1 = slerp(latents_real[0::2], latents_t[1::2], lerp_t + epsilon)
+            latents_e0 = slerp(lerp_t, latents_real[0::2], latents_t[1::2])
+            latents_e1 = slerp(lerp_t+epsilon, latents_real[0::2], latents_t[1::2])
 
             latents_e = np.vstack([latents_e0, latents_e1])
 
@@ -189,8 +189,8 @@ def recall_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_
             latents_t = np.array([ln for _ in range(latents_real.shape[0])])
             lerp_t = np.random.uniform()
 
-            latents_e0 = slerp(latents_real[0::2], latents_t[1::2], lerp_t)
-            latents_e1 = slerp(latents_real[0::2], latents_t[1::2], lerp_t + epsilon)
+            latents_e0 = slerp(lerp_t, latents_real[0::2], latents_t[1::2])
+            latents_e1 = slerp(lerp_t+epsilon, latents_real[0::2], latents_t[1::2])
 
             latents_e = np.vstack([latents_e0, latents_e1])
 
