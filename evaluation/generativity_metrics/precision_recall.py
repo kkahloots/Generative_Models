@@ -138,15 +138,10 @@ def precision_score(model, data_generator, nhood_size=3, row_batch_size=10000, c
             latents_real = model.encode(data)
 
             # Generate random latents and interpolation t-values.
-            ln = np.random.normal(size=[latents_real.shape[1]])
-            latents_t = np.array([ln for _ in range(latents_real.shape[0])])
-            lerp_t = np.random.uniform()
+            latents_t = np.random.normal(size=latents_real.shape)
+            lerp_t = np.random.uniform(size=1)[0]
 
-            latents_e0 = slerp(lerp_t, latents_real[0::2], latents_t[1::2])
-            latents_e1 = slerp(lerp_t+epsilon, latents_real[0::2], latents_t[1::2])
-
-            latents_e = np.vstack([latents_e0, latents_e1])
-
+            latents_e = slerp(lerp_t+epsilon, latents_real, latents_t)
             images = model.decode(latents_e).numpy()
             images = (images * 255).astype(np.float32)
 
@@ -185,15 +180,10 @@ def recall_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_
             latents_real = model.encode(data)
 
             # Generate random latents and interpolation t-values.
-            ln = np.random.normal(size=[latents_real.shape[1]])
-            latents_t = np.array([ln for _ in range(latents_real.shape[0])])
-            lerp_t = np.random.uniform()
+            latents_t = np.random.normal(size=latents_real.shape)
+            lerp_t = np.random.uniform(size=1)[0]
 
-            latents_e0 = slerp(lerp_t, latents_real[0::2], latents_t[1::2])
-            latents_e1 = slerp(lerp_t+epsilon, latents_real[0::2], latents_t[1::2])
-
-            latents_e = np.vstack([latents_e0, latents_e1])
-
+            latents_e = slerp(lerp_t+epsilon, latents_real, latents_t)
             images = model.decode(latents_e).numpy()
             images = (images * 255).astype(np.float32)
 

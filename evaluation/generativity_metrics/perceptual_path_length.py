@@ -53,15 +53,10 @@ def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-6
             latents_real = model.encode(next(data_generator))
 
             # Generate random latents and interpolation t-values.
-            ln = np.random.normal(size=[latents_real.shape[1]])
-            latents_t = np.array([ln for _ in range(latents_real.shape[0])])
-            lerp_t = np.random.uniform()
+            latents_t = np.random.normal(size=latents_real.shape)
+            lerp_t = np.random.uniform(size=1)[0]
 
-            latents_e0 = slerp(lerp_t, latents_real[0::2], latents_t[1::2])
-            latents_e1 = slerp(lerp_t+epsilon, latents_real[0::2])
-
-            latents_e = np.vstack([latents_e0, latents_e1])
-
+            latents_e = slerp(lerp_t, latents_real, latents_t)
             images = model.decode(latents_e).numpy()
             # images = (images*255).astype(np.uint8)
 

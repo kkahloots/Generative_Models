@@ -48,11 +48,16 @@ def bootstrapping_additive(data_generator, func, stopping_func, tolerance_thresh
 def slerp(val, low, high):
     """Code from https://github.com/soumith/dcgan.torch/issues/14"""
     omega = np.arccos(np.clip(np.dot(low / np.linalg.norm(low), high.transpose() / np.linalg.norm(high)), -1, 1))
-    so = np.sin(omega)
+    so = np.max(np.sin(omega))
+    try:
+        if omega.shape[1] != low.shape[1]:
+            omega = np.hstack([omega, omega])
+    except:
+        pass
 
     # l1 = lambda low, high, val: (1.0-val) * low + val * high
     # l2 = lambda low, high, val, so, omega: np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high
-    if so == 0:
+    if np.all(so == 0):
         return (1.0 - val) * low + val * high  # L'Hopital's rule/LERP
     return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
 
