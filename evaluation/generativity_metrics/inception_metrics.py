@@ -4,7 +4,7 @@ from evaluation.generativity_metrics.shared_api import mean_fn, sigma_fn, bootst
 import numpy as np
 import scipy as sp
 
-def inception_score(model, tolerance_threshold=1e-6, max_iteration=500):
+def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
     eps = 1e-6
     def calculate_is(x):
         kl = x * (np.log(x + eps) - np.log(np.expand_dims(np.mean(x + eps, 0), 0)))
@@ -36,7 +36,7 @@ def inception_score(model, tolerance_threshold=1e-6, max_iteration=500):
     return is_mean, is_sigma
 
 
-def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, max_iteration=500, batch_size=10):
+def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, max_iteration=100, batch_size=10):
     epsilon = 1e-2
 
     def calculate_fid(generated_mean, generated_sigma, inception_mean, inception_sigma):
