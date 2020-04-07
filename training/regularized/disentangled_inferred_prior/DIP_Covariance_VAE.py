@@ -1,10 +1,11 @@
 import tensorflow as tf
 from keras_radam import RAdam
-from graphs.regularized.DIP_AE_graph import create_losses
+from graphs.regularized.DIP_VAE_graph import create_losses
 from evaluation.quantitive_metrics.metrics import create_metrics
-from training.autoencoding_basic.autoencoders.autoencoder import autoencoder as basicAE
+from training.autoencoding_basic.autoencoders.VAE import VAE as VAE
+from statistical.pdfs import log_normal_pdf
 
-class DIP_Cov_AE(basicAE):
+class DIP_Cov_VAE(VAE):
 
     # override function
     def compile(
@@ -28,6 +29,70 @@ class DIP_Cov_AE(basicAE):
         tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
 
+    def __init_autoencoder__(self, **kwargs):
+        #  DIP configuration
+        self.lambda_d = 5
+        self.d_factor = 5
+        self.d = self.d_factor * self.lambda_d
+
+        # mean, logvariance = self.__encode__(inputs)
+        # z = reparametrize(mean, logvariance)
+        # connect the graph x' = decode(z)
+        inputs_dict= {
+            'x_mean': self.get_variables()['inference_mean'].inputs[0],
+            'x_logvariance': self.get_variables()['inference_logvariance'].inputs[0]
+        }
+        encoded = self.__encode__(inputs=inputs_dict)
+        x_logits = self.decode(encoded['z_latents'])
+        covariance_regularizer = encoded['covariance_regularized']
+
+        logpdf = log_normal_pdf(
+            sample=encoded['z_latents'],
+            mean=encoded['inference_mean'],
+            logvariance=encoded['inference_logvariance']
+        )
+
+        # renaming
+        x_logits._name = 'x_logits'
+        encoded['z_latents']._name = 'z_latents'
+        encoded['inference_mean']._name = 'inference_mean'
+        encoded['inference_logvariance']._name = 'inference_logvariance'
+        outputs_dict = {
+            'x_logits': x_logits,
+            'z_latents': encoded['z_latents'],
+            'x_mean': encoded['inference_mean'],
+            'x_logvariance': encoded['inference_logvariance'],
+            'logpdf': logpdf,
+            'covariance_regularized': covariance_regularizer
+        }
+
+        tf.keras.Model.__init__(
+            self,
+            name=self.name,
+            inputs=inputs_dict,
+            outputs=outputs_dict,
+            **kwargs
+        )
+
+    def __rename_outputs__(self):
+        ## rename the outputs
+        for i, output_name in enumerate(self.output_names):
+            if 'logpdf' in output_name:
+                self.output_names[i] = 'x_logpdf'
+            elif 'z_latents' in output_name:
+                self.output_names[i] = 'z_latents'
+            elif 'x_logits' in output_name:
+                self.output_names[i] = 'x_logits'
+            elif 'logvariance' in output_name:
+                self.output_names[i] = 'inference_logvariance'
+            elif 'inference_mean' in output_name:
+                self.output_names[i] = 'inference_mean'
+            elif 'covariance_regularized' in output_name:
+                self.output_names[i] = 'covariance_regularized'
+            else:
+                pass
+
+
     def __encode__(self, **kwargs):
         inputs = kwargs['inputs']
         for k, v in  inputs.items():
@@ -41,54 +106,23 @@ class DIP_Cov_AE(basicAE):
         covariance_regularizer = self.regularize(encoded['z_latents'])
         return {**encoded, 'covariance_regularized': covariance_regularizer}
 
-    def __init_autoencoder__(self, **kwargs):
-        #  DIP configuration
-        self.lambda_d = 5
-        self.d_factor = 5
-        self.d = self.d_factor * self.lambda_d
-
-        # connect the graph x' = decode(encode(x))
-        inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
-        encoded = self.__encode__(inputs=inputs_dict)
-        x_logits = self.decode({'z_latents': encoded['z_latents']})
-        covariance_regularizer = encoded['covariance_regularized']
-
-        outputs_dict = {
-            'x_logits': x_logits,
-            'covariance_regularized': covariance_regularizer
-        }
-        tf.keras.Model.__init__(
-            self,
-            name=self.name,
-            inputs=inputs_dict,
-            outputs=outputs_dict,
-            **kwargs
-        )
-
-    def __rename_outputs__(self):
-        # rename the outputs
-        ## rename the outputs
-        for i, output_name in enumerate(self.output_names):
-            if 'x_logits' in output_name:
-                self.output_names[i] = 'x_logits'
-            elif 'covariance_regularized' in output_name:
-                self.output_names[i] = 'covariance_regularized'
-            else:
-                print(self.output_names[i])
 
     def batch_cast(self, batch):
         if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32)/self.input_scale
+            x = tf.cast(batch[self.input_kw], dtype=tf.float32) / self.input_scale
         else:
-            x = tf.cast(batch, dtype=tf.float32)/self.input_scale
-
+            x = tf.cast(batch, dtype=tf.float32) / self.input_scale
         return {
-                   'inference_inputs': x,
+                   'inference_logvariance_inputs': x,
+                   'inference_mean_inputs': x
                }, \
                {
                    'x_logits': x,
+                   'z_latents': 0.0,
+                   'x_logpdf':0.0,
                    'covariance_regularized': 0.0
                }
+
 
     '''
     ------------------------------------------------------------------------------

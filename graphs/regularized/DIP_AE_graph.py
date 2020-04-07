@@ -1,5 +1,4 @@
 
-import tensorflow as tf
 from graphs.basics.AE_graph import cross_entropy
 
 def create_losses():

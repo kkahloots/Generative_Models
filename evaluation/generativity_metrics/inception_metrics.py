@@ -1,3 +1,4 @@
+import tensorflow as tf
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.applications.inception_v3 import preprocess_input as inception_preprocess_input
 from evaluation.generativity_metrics.shared_api import mean_fn, sigma_fn, bootstrapping_additive, slerp
@@ -23,7 +24,11 @@ def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
         while True:
             predictions = []
             for _ in range(500):
-                data = model.generate_random_images().numpy()
+                data = model.generate_random_images()
+                if data.shape[-1]==1:
+                    data = tf.image.grayscale_to_rgb(data)
+
+                data = data.numpy()
                 data = (data * 255).astype(np.uint8)
                 predictions += [inception_predictions(data)]
             yield da.from_array(np.vstack(predictions), chunks=100)
@@ -88,6 +93,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
     def inception_predictions_generator():
         while True:
             images = next(data_generator)
+            if images.shape[-1] == 1:
+                images = tf.image.grayscale_to_rgb(images)
+
             images = (images * 255).astype(np.uint8)
             yield inception_predictions(images)[:batch_size]
 
@@ -100,6 +108,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
     def inception_predictions_generator():
         while True:
             images = next(data_generator)
+            if images.shape[-1] == 1:
+                images = tf.image.grayscale_to_rgb(images)
+
             images = (images * 255).astype(np.uint8)
             yield inception_predictions(images)[:batch_size]
 
@@ -113,6 +124,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
         while True:
             # Generate latents from the data
             data = next(data_generator)
+            if data.shape[-1] == 1:
+                data = tf.image.grayscale_to_rgb(data)
+
             latents_real = model.encode(data)
 
             # Generate random latents and interpolation t-values.
@@ -135,6 +149,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
         while True:
             # Generate latents from the data
             data = next(data_generator)
+            if data.shape[-1] == 1:
+                data = tf.image.grayscale_to_rgb(data)
+
             latents_real = model.encode(data)
 
             # Generate random latents and interpolation t-values.
