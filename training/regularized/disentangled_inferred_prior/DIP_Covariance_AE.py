@@ -102,9 +102,8 @@ class DIP_Cov(basicAE):
         # Eq 6 page 4
         # mu = z_mean is [batch_size, num_latent]
         # Compute cov_p(x) [mu(x)] = E[mu*mu^T] - E[mu]E[mu]^T]
-        cov_dip_regularizer = tf.add(self.regularize_diag_off_diag_dip(cov_latent_mean, self.lambda_d, self.d), 0.0,
-                                     name='covariance_regularized')
-
+        cov_dip_regularizer = self.regularize_diag_off_diag_dip(cov_latent_mean, self.lambda_d, self.d)
+        cov_dip_regularizer = tf.add(cov_dip_regularizer, 0.0, name='covariance_regularized')
         return cov_dip_regularizer
 
     def compute_covariance_latent_mean(self, latent_mean):
@@ -138,9 +137,10 @@ class DIP_Cov(basicAE):
         Returns:
             dip_regularizer: Regularized deviation from diagonal of covariance_matrix.
         """
+        #matrix_diag_part
         covariance_matrix_diagonal = tf.linalg.diag_part(covariance_matrix)
         covariance_matrix_off_diagonal = covariance_matrix - tf.linalg.diag(covariance_matrix_diagonal)
         dip_regularizer = tf.add(
-              lambda_od * tf.reduce_sum(covariance_matrix_off_diagonal**2),
-              lambda_d * tf.reduce_sum((covariance_matrix_diagonal - 1)**2))
+              lambda_od * covariance_matrix_off_diagonal**2,
+              lambda_d * (covariance_matrix_diagonal - 1)**2)
         return dip_regularizer
