@@ -40,10 +40,9 @@ def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
                     data = tf.image.grayscale_to_rgb(data)
 
                 if data.shape[-2]<75:
-                    if len(data.shape)>4:
-                        data = tf.image.resize(data, tf.TensorShape([data.shape[0], data.shape[1], 75, 75,  data.shape[-1]]))
-                    else:
-                        data = tf.image.resize(data, tf.TensorShape([data.shape[0], 75, 75, data.shape[-1]]))
+                    new_size = [75, 75]
+                    resize_fn = lambda image: tf.image.resize(image, new_size)
+                    data = tf.map_fn(resize_fn, data)
 
                 data = data.numpy()
                 data = (data * 255).astype(np.uint8)
@@ -111,10 +110,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
         while True:
             images = next(data_generator)
             if images.shape[-2] < 75:
-                if len(images.shape) > 4:
-                    images = tf.image.resize(images, tf.TensorShape([images.shape[0], images.shape[1], 75, 75, images.shape[-1]]))
-                else:
-                    images = tf.image.resize(images, tf.TensorShape([images.shape[0], 75, 75, images.shape[-1]]))
+                new_size = [75, 75]
+                resize_fn = lambda image: tf.image.resize(image, new_size)
+                images = tf.map_fn(resize_fn, images)
 
             if images.shape[-1] == 1:
                 images = tf.image.grayscale_to_rgb(images)
@@ -132,6 +130,10 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
         while True:
             images = next(data_generator)
             if images.shape[-2] < 75:
+                new_size = [75, 75]
+                resize_fn = lambda image: tf.image.resize(image, new_size)
+                images = tf.map_fn(resize_fn, images)
+
                 if len(images.shape) > 4:
                     images = tf.image.resize(images, tf.TensorShape([images.shape[0], images.shape[1], 75, 75, images.shape[-1]]))
                 else:
@@ -154,10 +156,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
             # Generate latents from the data
             data = next(data_generator)
             if data.shape[-2] < 75:
-                if len(data.shape) > 4:
-                    data = tf.image.resize(data, tf.TensorShape([data.shape[0], data.shape[1], 75, 75, data.shape[-1]]))
-                else:
-                    data = tf.image.resize(data, tf.TensorShape([data.shape[0], 75, 75, data.shape[-1]]))
+                new_size = [75, 75]
+                resize_fn = lambda image: tf.image.resize(image, new_size)
+                data = tf.map_fn(resize_fn, data)
 
             if data.shape[-1] == 1:
                 data = tf.image.grayscale_to_rgb(data)
@@ -185,10 +186,9 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
             # Generate latents from the data
             data = next(data_generator)
             if data.shape[-2] < 75:
-                if len(data.shape) > 4:
-                    data = tf.image.resize(data, tf.TensorShape([data.shape[0], data.shape[1], 75, 75, data.shape[-1]]))
-                else:
-                    data = tf.image.resize(data, tf.TensorShape([data.shape[0], 75, 75, data.shape[-1]]))
+                new_size = [75, 75]
+                resize_fn = lambda image: tf.image.resize(image, new_size)
+                data = tf.map_fn(resize_fn, data)
 
             if data.shape[-1] == 1:
                 data = tf.image.grayscale_to_rgb(data)
