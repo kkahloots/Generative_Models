@@ -20,6 +20,10 @@ class tVAE(autoencoder):
             **kwargs
         )
 
+    # autoencoder function
+    def encode(self, x):
+        return self.__encode__(inputs={'x_mean': x, 'x_logvariance': x})['z_latents']
+
     def __init_autoencoder__(self, **kwargs):
         # mean, logvariance = self.__encode__(inputs)
         # z = reparametrize(mean, logvariance)

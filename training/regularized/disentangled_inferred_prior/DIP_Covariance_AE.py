@@ -75,7 +75,7 @@ class DIP_Covariance_AE(basicAE):
             elif 'covariance_regularized' in output_name:
                 self.output_names[i] = 'covariance_regularized'
             else:
-                print(self.output_names[i])
+                pass
 
     def batch_cast(self, batch):
         if self.input_kw:

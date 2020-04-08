@@ -40,7 +40,7 @@ class DIP_BayesianCovariance_AE(basicAE):
 
         encoded = self.encode_fn(**kwargs)
         covariance_mean, covariance_regularizer = regularize(latent_mean=encoded['z_latents'], \
-                                                       regularize=True, lambda_d=self.lambda_d, d=self.lambda_od)
+                                                       regularize=True, lambda_d=self.lambda_d, lambda_od=self.lambda_od)
 
         covariance_logvariance = tf.sigmoid(encoded['z_latents'])
         covariance_sigma = tf.reduce_mean(tf.linalg.diag(tf.exp(covariance_logvariance)), axis=0)
@@ -49,7 +49,9 @@ class DIP_BayesianCovariance_AE(basicAE):
         bayesian_divergent = tfp.distributions.kl_divergence(posterior_distribution, prior_distribution, \
                                                                  name='bayesian_divergent')
 
-        return {**encoded, 'covariance_regularized': covariance_regularizer, 'bayesian_divergent': bayesian_divergent}
+        return {**encoded,
+                'covariance_regularized': covariance_regularizer,
+                'bayesian_divergent': bayesian_divergent}
 
     def __init_autoencoder__(self, **kwargs):
         #  DIP configuration
@@ -60,14 +62,12 @@ class DIP_BayesianCovariance_AE(basicAE):
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
         encoded = self.__encode__(inputs=inputs_dict)
         x_logits = self.decode(latents={'z_latents': encoded['z_latents']})
-        covariance_mean = encoded['covariance_mean']
         covariance_regularizer =  encoded['covariance_regularized']
         bayesian_divergent = encoded['bayesian_divergent']
 
         outputs_dict = {
             'x_logits': x_logits,
             'covariance_regularized': covariance_regularizer,
-            'covariance_mean': covariance_mean,
             'bayesian_divergent': bayesian_divergent
         }
         tf.keras.Model.__init__(
@@ -89,7 +89,7 @@ class DIP_BayesianCovariance_AE(basicAE):
             elif 'bayesian_divergent' in output_name:
                 self.output_names[i] = 'bayesian_divergent'
             else:
-                print(self.output_names[i])
+                pass
 
     def batch_cast(self, batch):
         if self.input_kw:
