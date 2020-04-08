@@ -17,4 +17,4 @@ def covariance_regularized(inputs, covariance_regularizer):
     return covariance_regularizer
 
 def bayesian_divergence(inputs, bayesian_divergent):
-    return -tf.reduce_sum(bayesian_divergent)
+    return -bayesian_divergent

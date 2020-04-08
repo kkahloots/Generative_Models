@@ -42,13 +42,11 @@ class DIP_BayesianCovariance_AE(basicAE):
         covariance_mean, covariance_regularizer = regularize(latent_mean=encoded['z_latents'], \
                                                        regularize=True, lambda_d=self.lambda_d, lambda_od=self.lambda_od)
 
-        covariance_logvariance = tf.sigmoid(encoded['z_latents'])
-        covariance_sigma = tf.reduce_mean(tf.linalg.diag(tf.exp(covariance_logvariance)), axis=0)
+        covariance_sigma = tf.sigmoid(encoded['z_latents'])
         prior_distribution = tfp.distributions.Normal(loc=covariance_mean, scale=covariance_sigma)
         posterior_distribution = tfp.distributions.Normal(loc=encoded['z_latents'], scale=covariance_sigma)
-        bayesian_divergent = tfp.distributions.kl_divergence(posterior_distribution, prior_distribution, \
-                                                                 name='bayesian_divergent')
-
+        bayesian_divergent = tfp.distributions.kl_divergence(posterior_distribution, prior_distribution)
+        bayesian_divergent = tf.identity(bayesian_divergent, name='bayesian_divergent' )
         return {**encoded,
                 'covariance_regularized': covariance_regularizer,
                 'bayesian_divergent': bayesian_divergent}
@@ -70,6 +68,7 @@ class DIP_BayesianCovariance_AE(basicAE):
             'covariance_regularized': covariance_regularizer,
             'bayesian_divergent': bayesian_divergent
         }
+
         tf.keras.Model.__init__(
             self,
             name=self.name,

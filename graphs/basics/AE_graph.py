@@ -16,7 +16,7 @@ def create_graph(name, variables_params, restore=None):
     return get_variables
 
 def create_losses():
-    return dict(zip(['x_logits'], [cross_entropy]))
+    return {'x_logits': cross_entropy}
 
 def cross_entropy(inputs, x_logits):
     reconstruction_loss = expected_loglikelihood_with_lower_bound(x_true=inputs, x_logits=x_logits)
