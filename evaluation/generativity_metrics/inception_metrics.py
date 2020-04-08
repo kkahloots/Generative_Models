@@ -1,12 +1,22 @@
+import numpy as np
+import scipy as sp
+import dask.array as da
+import dask.delayed as delayed
 import tensorflow as tf
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.applications.inception_v3 import preprocess_input as inception_preprocess_input
+
 from evaluation.generativity_metrics.shared_api import mean_fn, sigma_fn, bootstrapping_additive, slerp
-import numpy as np
-import scipy as sp
+
 epsilon = 1e-6
-import dask.array as da
-import dask.delayed as delayed
+
+
+def adjust_shape(shape):
+    if shape[-2] < 75:
+        shape = [shape[0]*shape[1], 75, 75, 3]
+    else:
+        shape = [shape[0], 75, 75, 3]
+    return shape[-3:]
 
 def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
     @delayed
@@ -16,7 +26,7 @@ def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
         return np.exp(kl+epsilon)
 
     # prepare the inception v3 model
-    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
+    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=adjust_shape(model.get_inputs_shape()))
     inception_predictions = lambda x: inception_model.predict(inception_preprocess_input(x))
 
     # prepare the ae model random_images_generator
@@ -25,14 +35,15 @@ def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
             predictions = []
             for _ in range(500):
                 data = model.generate_random_images()
+
+                if data.shape[-1]==1:
+                    data = tf.image.grayscale_to_rgb(data)
+
                 if data.shape[-2]<75:
                     if len(data.shape)>4:
                         data = tf.image.resize(data, tf.TensorShape([data.shape[0], data.shape[1], 75, 75,  data.shape[-1]]))
                     else:
                         data = tf.image.resize(data, tf.TensorShape([data.shape[0], 75, 75, data.shape[-1]]))
-
-                if data.shape[-1]==1:
-                    data = tf.image.grayscale_to_rgb(data)
 
                 data = data.numpy()
                 data = (data * 255).astype(np.uint8)
@@ -93,7 +104,7 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
         return fid
 
     # prepare the inception v3 model
-    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
+    inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=adjust_shape(model.get_inputs_shape()))
     inception_predictions = lambda x: inception_model.predict(inception_preprocess_input(x))
 
     def inception_predictions_generator():
