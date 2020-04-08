@@ -5,7 +5,7 @@ from evaluation.quantitive_metrics.metrics import create_metrics
 from training.autoencoding_basic.autoencoders.autoencoder import autoencoder as basicAE
 from training.regularized.DIP_shared import regularize
 
-class DIP_Covariance_AE(basicAE):
+class DIP_BayesianCovariance_AE(basicAE):
 
     # override function
     def compile(
@@ -39,9 +39,9 @@ class DIP_Covariance_AE(basicAE):
         kwargs['latents_shape'] = (self.batch_size, self.latents_dim)
 
         encoded = self.encode_fn(**kwargs)
-        _, covariance_regularizer = regularize(latent_mean=encoded['z_latents'], \
+        covariance_mean, covariance_regularizer = regularize(latent_mean=encoded['z_latents'], \
                                                        regularize=True, lambda_d=self.lambda_d, d=self.d)
-        return {**encoded, 'covariance_regularized': covariance_regularizer}
+        return {**encoded, 'covariance_regularized': covariance_regularizer, 'covariance_mean': covariance_mean}
 
     def __init_autoencoder__(self, **kwargs):
         #  DIP configuration
@@ -53,11 +53,12 @@ class DIP_Covariance_AE(basicAE):
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
         encoded = self.__encode__(inputs=inputs_dict)
         x_logits = self.decode({'z_latents': encoded['z_latents']})
-        covariance_regularizer = encoded['covariance_regularized']
+        covariance_mean, covariance_regularizer = encoded['covariance_mean'], encoded['covariance_regularized']
 
         outputs_dict = {
             'x_logits': x_logits,
-            'covariance_regularized': covariance_regularizer
+            'covariance_regularized': covariance_regularizer,
+            'covariance_mean': covariance_mean
         }
         tf.keras.Model.__init__(
             self,
@@ -75,6 +76,8 @@ class DIP_Covariance_AE(basicAE):
                 self.output_names[i] = 'x_logits'
             elif 'covariance_regularized' in output_name:
                 self.output_names[i] = 'covariance_regularized'
+            elif 'covariance_mean' in output_name:
+                self.output_names[i] = 'covariance_mean'
             else:
                 print(self.output_names[i])
 
@@ -89,6 +92,7 @@ class DIP_Covariance_AE(basicAE):
                }, \
                {
                    'x_logits': x,
-                   'covariance_regularized': 0.0
+                   'covariance_regularized': 0.0,
+                   'covariance_mean': 0.0
                }
 
