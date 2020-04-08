@@ -32,9 +32,8 @@ class DIP_Covariance_VAE(VAE):
 
     def __init_autoencoder__(self, **kwargs):
         #  DIP configuration
-        self.lambda_d = 5
-        self.d_factor = 5
-        self.d = self.d_factor * self.lambda_d
+        self.lambda_d = 50
+        self.lambda_od = 100
 
         # mean, logvariance = self.__encode__(inputs)
         # z = reparametrize(mean, logvariance)
@@ -105,7 +104,7 @@ class DIP_Covariance_VAE(VAE):
 
         encoded = self.encode_fn(**kwargs)
         _, covariance_regularizer = regularize(latent_mean=encoded['z_latents'], \
-                                                     regularize=True, lambda_d=self.lambda_d, d=self.d)
+                                                     regularize=True, lambda_d=self.lambda_d, lambda_od=self.lambda_od)
 
         return {**encoded, 'covariance_regularized': covariance_regularizer}
 

@@ -40,19 +40,18 @@ class DIP_Covariance_AE(basicAE):
 
         encoded = self.encode_fn(**kwargs)
         _, covariance_regularizer = regularize(latent_mean=encoded['z_latents'], \
-                                                       regularize=True, lambda_d=self.lambda_d, d=self.d)
+                                                       regularize=True, lambda_d=self.lambda_d, lambda_od=self.lambda_od)
         return {**encoded, 'covariance_regularized': covariance_regularizer}
 
     def __init_autoencoder__(self, **kwargs):
         #  DIP configuration
-        self.lambda_d = 5
-        self.d_factor = 5
-        self.d = self.d_factor * self.lambda_d
+        self.lambda_d = 50
+        self.lambda_od = 100
 
         # connect the graph x' = decode(encode(x))
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
         encoded = self.__encode__(inputs=inputs_dict)
-        x_logits = self.decode({'z_latents': encoded['z_latents']})
+        x_logits = self.decode(latents={'z_latents': encoded['z_latents']})
         covariance_regularizer = encoded['covariance_regularized']
 
         outputs_dict = {

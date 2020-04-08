@@ -1,12 +1,12 @@
 import tensorflow as tf
 from keras_radam import RAdam
-from graphs.regularized.DIP_AE_graph import create_DIP_losses
+from graphs.regularized.DIP_AE_graph import create_DIP_Bayesian_losses
 from evaluation.quantitive_metrics.metrics import create_metrics
 from training.autoencoding_basic.autoencoders.autoencoder import autoencoder as basicAE
 from training.regularized.DIP_shared import regularize
+import tensorflow_probability as tfp
 
 class DIP_BayesianCovariance_AE(basicAE):
-
     # override function
     def compile(
             self,
@@ -15,7 +15,7 @@ class DIP_BayesianCovariance_AE(basicAE):
             **kwargs
     ):
 
-        ae_losses = create_DIP_losses()
+        ae_losses = create_DIP_Bayesian_losses()
         loss = loss or {}
         for k in loss:
             ae_losses.pop(k)
@@ -40,25 +40,35 @@ class DIP_BayesianCovariance_AE(basicAE):
 
         encoded = self.encode_fn(**kwargs)
         covariance_mean, covariance_regularizer = regularize(latent_mean=encoded['z_latents'], \
-                                                       regularize=True, lambda_d=self.lambda_d, d=self.d)
-        return {**encoded, 'covariance_regularized': covariance_regularizer, 'covariance_mean': covariance_mean}
+                                                       regularize=True, lambda_d=self.lambda_d, d=self.lambda_od)
+
+        covariance_logvariance = tf.sigmoid(encoded['z_latents'])
+        covariance_sigma = tf.reduce_mean(tf.linalg.diag(tf.exp(covariance_logvariance)), axis=0)
+        prior_distribution = tfp.distributions.Normal(loc=covariance_mean, scale=covariance_sigma)
+        posterior_distribution = tfp.distributions.Normal(loc=encoded['z_latents'], scale=covariance_sigma)
+        bayesian_divergent = tfp.distributions.kl_divergence(posterior_distribution, prior_distribution, \
+                                                                 name='bayesian_divergent')
+
+        return {**encoded, 'covariance_regularized': covariance_regularizer, 'bayesian_divergent': bayesian_divergent}
 
     def __init_autoencoder__(self, **kwargs):
         #  DIP configuration
-        self.lambda_d = 5
-        self.d_factor = 5
-        self.d = self.d_factor * self.lambda_d
+        self.lambda_d = 100
+        self.lambda_od = 50
 
         # connect the graph x' = decode(encode(x))
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
         encoded = self.__encode__(inputs=inputs_dict)
-        x_logits = self.decode({'z_latents': encoded['z_latents']})
-        covariance_mean, covariance_regularizer = encoded['covariance_mean'], encoded['covariance_regularized']
+        x_logits = self.decode(latents={'z_latents': encoded['z_latents']})
+        covariance_mean = encoded['covariance_mean']
+        covariance_regularizer =  encoded['covariance_regularized']
+        bayesian_divergent = encoded['bayesian_divergent']
 
         outputs_dict = {
             'x_logits': x_logits,
             'covariance_regularized': covariance_regularizer,
-            'covariance_mean': covariance_mean
+            'covariance_mean': covariance_mean,
+            'bayesian_divergent': bayesian_divergent
         }
         tf.keras.Model.__init__(
             self,
@@ -76,8 +86,8 @@ class DIP_BayesianCovariance_AE(basicAE):
                 self.output_names[i] = 'x_logits'
             elif 'covariance_regularized' in output_name:
                 self.output_names[i] = 'covariance_regularized'
-            elif 'covariance_mean' in output_name:
-                self.output_names[i] = 'covariance_mean'
+            elif 'bayesian_divergent' in output_name:
+                self.output_names[i] = 'bayesian_divergent'
             else:
                 print(self.output_names[i])
 
@@ -93,6 +103,6 @@ class DIP_BayesianCovariance_AE(basicAE):
                {
                    'x_logits': x,
                    'covariance_regularized': 0.0,
-                   'covariance_mean': 0.0
+                   'bayesian_divergent': 0.0
                }
 

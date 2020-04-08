@@ -16,7 +16,7 @@ class DIP_Gaussian_Covariance_AE(DIP_Covariance_AE):
         _, covariance_regularizer = gaussian_regularize(
                                                         latent_mean=encoded['z_latents'],
                                                         latent_logvariance=tf.sigmoid(encoded['z_latents']),\
-                                                        regularize=True, lambda_d=self.lambda_d, d=self.d
+                                                        regularize=True, lambda_d=self.lambda_d, lambda_od=self.lambda_od
         )
         return {**encoded, 'covariance_regularized': covariance_regularizer}
 

@@ -6,21 +6,21 @@
 
 import tensorflow as tf
 
-def regularize(latent_mean, regularize=True, lambda_d=0, d=0):
+def regularize(latent_mean, regularize=True, lambda_d=100, lambda_od=50):
     cov_latent_mean = compute_covariance(latent_mean)
 
     # Eq 6 page 4
     # mu = z_mean is [batch_size, num_latent]
     # Compute cov_p(x) [mu(x)] = E[mu*mu^T] - E[mu]E[mu]^T]
     if regularize:
-        cov_dip_regularizer = regularize_diag_off_diag_dip(cov_latent_mean, lambda_d, d)
+        cov_dip_regularizer = regularize_diag_off_diag_dip(cov_latent_mean, lambda_d, lambda_od)
         cov_dip_regularizer = tf.identity(cov_dip_regularizer, name='covariance_regularized')
         return cov_latent_mean, cov_dip_regularizer
     else:
         return cov_latent_mean
 
 
-def gaussian_regularize(latent_mean, latent_logvariance, regularize=True, lambda_d=0, d=0):
+def gaussian_regularize(latent_mean, latent_logvariance, regularize=True, lambda_d=100, lambda_od=50):
     cov_enc = tf.linalg.diag(tf.exp(latent_logvariance))
     cov_latent_sigma = tf.reduce_mean(cov_enc, axis=0)
     cov_latent_mean = compute_covariance(latent_mean)
@@ -31,7 +31,7 @@ def gaussian_regularize(latent_mean, latent_logvariance, regularize=True, lambda
     # mu = z_mean is [batch_size, num_latent]
     # Compute cov_p(x) [mu(x)] = E[mu*mu^T] - E[mu]E[mu]^T]
     if regularize:
-        cov_dip_regularizer = regularize_diag_off_diag_dip(cov_latent, lambda_d, d)
+        cov_dip_regularizer = regularize_diag_off_diag_dip(cov_latent, lambda_d, lambda_od)
         cov_dip_regularizer = tf.identity(cov_dip_regularizer, name='covariance_regularized')
         return cov_latent_mean, cov_dip_regularizer
     else:
