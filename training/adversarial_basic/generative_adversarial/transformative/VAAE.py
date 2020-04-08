@@ -35,7 +35,7 @@ class VAAE(autoencoder):
                     'adversarial_item': 'inference',
                     'adversarial_value': self.ZEROS
                 },
-            'inference_generator_fake':
+            'generative_generator_fake':
                 {
                     'variable': None,
                     'adversarial_item': 'inference',
@@ -77,7 +77,7 @@ class VAAE(autoencoder):
         autoencoder.fit(
             self,
             x=x,
-            validation_data=validation_data
+            validation_data=validation_data,
             **kwargs
         )
 
@@ -218,6 +218,7 @@ class VAAE(autoencoder):
         self._AA.generate_sample = self.generate_sample
         self._AA.get_variable = self.get_variable
         self._AA.inputs_shape = self.get_inputs_shape()
+        self._AA.get_inputs_shape = self.get_inputs_shape
         self._AA.latents_dim = self.latents_dim
         self._AA.save = self.save
 
