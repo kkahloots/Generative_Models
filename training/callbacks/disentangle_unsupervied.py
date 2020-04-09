@@ -15,7 +15,7 @@ class DisentanglementUnsuperviedMetrics(tf.keras.callbacks.Callback):
             num_train=1000,
             num_test=200,
             batch_size=32,
-            gt_freq=25,
+            gt_freq=10,
             **kws
     ):
         self.gt_data = ground_truth_data
@@ -28,15 +28,21 @@ class DisentanglementUnsuperviedMetrics(tf.keras.callbacks.Callback):
         self.gt_freq = gt_freq
         tf.keras.callbacks.Callback.__init__(self, **kws)
 
+    def on_train_end(self, logs=None):
+        self.score_metrics(-999, logs)
+
     def on_epoch_end(self, epoch, logs={}):
         if epoch % self.gt_freq == 0:  # or save after some epoch, each k-th epoch etc.
-            us_scores = unsupervised_metrics(
-                ground_truth_data=self.gt_data,
-                representation_fn=self.representation_fn,
-                random_state=self.random_state,
-                num_train=self.num_train,
-                batch_size=self.batch_size
-            )
+            self.score_metrics(epoch, logs)
 
-            gt_metrics = {'Epoch': epoch, **us_scores}
-            log(file_name=self.file_Name, message=dict(gt_metrics))
+    def score_metrics(self, epoch, logs={}):
+         us_scores = unsupervised_metrics(
+             ground_truth_data=self.gt_data,
+             representation_fn=self.representation_fn,
+             random_state=self.random_state,
+             num_train=self.num_train,
+             batch_size=self.batch_size
+         )
+
+         gt_metrics = {'Epoch': epoch, **us_scores}
+         log(file_name=self.file_Name, message=dict(gt_metrics))
