@@ -94,7 +94,7 @@ class autoencoder(tf.keras.Model):
             callbacks=None,
             validation_data=None,
             validation_steps=None,
-            validation_split=0.1,
+            validation_split=0.0,
             validation_freq=1,
             class_weight=None,
             max_queue_size=10,
