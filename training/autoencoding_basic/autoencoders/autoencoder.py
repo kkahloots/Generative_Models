@@ -117,6 +117,7 @@ class autoencoder(tf.keras.Model):
                 validation_data=None if validation_data is None else validation_data.map(self.batch_cast),
                 validation_steps=validation_steps,
                 validation_freq=validation_freq,
+                validation_split=validation_split,
                 class_weight=class_weight,
                 max_queue_size=max_queue_size,
                 workers=workers,
