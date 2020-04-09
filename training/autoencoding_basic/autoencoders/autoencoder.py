@@ -13,7 +13,7 @@ class autoencoder(tf.keras.Model):
             name,
             latents_dim,
             variables_params,
-            batch_size=100,
+            batch_size=32,
             filepath=None,
             model_fn=create_graph,
             encode_fn=encode_fn,
