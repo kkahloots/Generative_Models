@@ -37,8 +37,9 @@ def generate_batch_factor_code(
                                        representation_function(
                                            current_observations)))
         i += batch_size
+    representations = representations[:num_points]
+    factors = factors[:num_points]
     return np.transpose(representations), np.transpose(factors)
-
 
 
 def log10(t):
