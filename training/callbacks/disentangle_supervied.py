@@ -16,7 +16,7 @@ class DisentanglementSuperviedMetrics(tf.keras.callbacks.Callback):
             num_test=200,
             batch_size=32,
             continuous_factors=False,
-            gt_freq=25,
+            gt_freq=10,
             **kws
     ):
         self.gt_data = ground_truth_data
@@ -30,16 +30,22 @@ class DisentanglementSuperviedMetrics(tf.keras.callbacks.Callback):
         self.gt_freq = gt_freq
         tf.keras.callbacks.Callback.__init__(self, **kws)
 
+    def on_train_end(self, logs=None):
+        self.score_metrics(-999, logs)
+
     def on_epoch_end(self, epoch, logs={}):
         if epoch % self.gt_freq == 0:  # or save after some epoch, each k-th epoch etc.
-            s_scores = supervised_metrics(
-                ground_truth_data=self.gt_data,
-                representation_fn=self.representation_fn,
-                random_state=self.random_state,
-                num_train=self.num_train,
-                num_test=self.num_test,
-                continuous_factors=self.continuous_factors,
-                batch_size=self.batch_size
-            )
-            gt_metrics = {'Epoch': epoch, **s_scores}
-            log(file_name=self.file_Name, message=dict(gt_metrics))
+            self.score_metrics(epoch, logs)
+
+    def score_metrics(self, epoch, logs={}):
+        s_scores = supervised_metrics(
+            ground_truth_data=self.gt_data,
+            representation_fn=self.representation_fn,
+            random_state=self.random_state,
+            num_train=self.num_train,
+            num_test=self.num_test,
+            continuous_factors=self.continuous_factors,
+            batch_size=self.batch_size
+        )
+        gt_metrics = {'Epoch': epoch, **s_scores}
+        log(file_name=self.file_Name, message=dict(gt_metrics))

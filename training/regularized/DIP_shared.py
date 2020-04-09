@@ -3,7 +3,6 @@
                                      DIP_Covarance OPERATIONS
 ------------------------------------------------------------------------------
 '''
-
 import tensorflow as tf
 
 def regularize(latent_mean, regularize=True, lambda_d=100, lambda_od=50):
@@ -18,7 +17,6 @@ def regularize(latent_mean, regularize=True, lambda_d=100, lambda_od=50):
         return cov_latent_mean, cov_dip_regularizer
     else:
         return cov_latent_mean
-
 
 def gaussian_regularize(latent_mean, latent_logvariance, regularize=True, lambda_d=100, lambda_od=50):
     cov_enc = tf.linalg.diag(tf.exp(latent_logvariance))
@@ -36,7 +34,6 @@ def gaussian_regularize(latent_mean, latent_logvariance, regularize=True, lambda
         return cov_latent_mean, cov_dip_regularizer
     else:
         return cov_latent_mean
-
 
 def compute_covariance(latent_mean):
     """
