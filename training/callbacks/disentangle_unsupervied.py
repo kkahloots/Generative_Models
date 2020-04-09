@@ -15,7 +15,7 @@ class DisentanglementUnsuperviedMetrics(tf.keras.callbacks.Callback):
             num_train=1000,
             num_test=200,
             batch_size=32,
-            gt_freq=10,
+            gt_freq=25,
             **kws
     ):
         self.gt_data = ground_truth_data

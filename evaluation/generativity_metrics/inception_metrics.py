@@ -18,7 +18,7 @@ def adjust_shape(shape):
         shape = [shape[0], 75, 75, 3]
     return shape[-3:]
 
-def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
+def inception_score(model, tolerance_threshold=1e-6, max_iteration=200):
     @delayed
     def calculate_is(x):
         kl = x * (np.log(x+epsilon) - np.log(np.expand_dims(np.mean(x+epsilon, 0), 0)))
@@ -64,7 +64,7 @@ def inception_score(model, tolerance_threshold=1e-6, max_iteration=100):
     return is_mean, is_sigma
 
 
-def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, max_iteration=100, batch_size=10):
+def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, max_iteration=200, batch_size=10):
     @delayed
     def calculate_fid(generated_mean, generated_sigma, inception_mean, inception_sigma):
         """Numpy implementation of the Frechet Distance.

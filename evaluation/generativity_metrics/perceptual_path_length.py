@@ -4,7 +4,7 @@ from evaluation.generativity_metrics.shared_api import mean_fn, sigma_fn, bootst
 import numpy as np
 
 epsilon=1e-4
-def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-6, max_iteration=100, batch_size=10):
+def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-6, max_iteration=200, batch_size=10):
     # prepare the inception v3 model
     VGG16_model = VGG16(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
     VGG16_featues_fn = lambda x: VGG16_model(x)

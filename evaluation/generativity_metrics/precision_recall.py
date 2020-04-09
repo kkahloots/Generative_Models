@@ -123,7 +123,7 @@ def knn_precision_recall_features(ref_features, eval_features, feature_net, nhoo
     return state
 
 def precision_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_batch_size=10000,
-                    tolerance_threshold=1e-6, max_iteration=100):
+                    tolerance_threshold=1e-6, max_iteration=200):
     # prepare the inception v3 model
     VGG16_model = VGG16(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
     VGG16_featues_fn = lambda x: VGG16_model(x)
@@ -165,7 +165,7 @@ def precision_score(model, data_generator, nhood_size=3, row_batch_size=10000, c
     return knn_precision_mean
 
 def recall_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_batch_size=10000,
-                    tolerance_threshold=1e-6, max_iteration=100):
+                    tolerance_threshold=1e-6, max_iteration=200):
     # prepare the inception v3 model
     VGG16_model = VGG16(include_top=False, pooling='avg', input_shape=model.get_inputs_shape())
     VGG16_featues_fn = lambda x: VGG16_model(x)

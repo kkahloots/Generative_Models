@@ -16,7 +16,7 @@ class DisentanglementSuperviedMetrics(tf.keras.callbacks.Callback):
             num_test=200,
             batch_size=32,
             continuous_factors=False,
-            gt_freq=10,
+            gt_freq=25,
             **kws
     ):
         self.gt_data = ground_truth_data
