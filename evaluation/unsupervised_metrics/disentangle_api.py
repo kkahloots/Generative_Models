@@ -9,7 +9,7 @@ def unsupervised_metrics(
         representation_fn,
         random_state,
         num_train,
-        batch_size=16):
+        batch_size=32):
     """Computes unsupervised scores based on covariance_regularizer and mutual information.
        Args:
             ground_truth_data: GroundTruthData to be sampled from.

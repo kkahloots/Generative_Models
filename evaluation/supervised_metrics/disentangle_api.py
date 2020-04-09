@@ -14,7 +14,7 @@ def supervised_metrics(
         num_train,
         num_test,
         continuous_factors,
-        batch_size=16
+        batch_size=32
 ):
     """
     Computes the DCI scores according to Sec 2.
