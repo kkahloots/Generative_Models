@@ -25,9 +25,9 @@ def generate_batch_factor_code(
     factors = None
     i = 0
     while i < num_points:
-        num_points_iter = min(num_points - i, batch_size)
+        #num_points_iter = min(num_points - i, batch_size)
         current_factors, current_observations = \
-            ground_truth_data.sample(num_points_iter, random_state)
+            ground_truth_data.sample(batch_size, random_state)
         if i == 0:
             factors = current_factors
             representations = representation_function(current_observations)
@@ -36,7 +36,7 @@ def generate_batch_factor_code(
             representations = np.vstack((representations,
                                        representation_function(
                                            current_observations)))
-        i += num_points_iter
+        i += batch_size
     return np.transpose(representations), np.transpose(factors)
 
 
