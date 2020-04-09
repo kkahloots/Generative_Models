@@ -1,10 +1,10 @@
 import tensorflow as tf
 
-def create_genertive_discriminator_real_losses():
+def create_generative_discriminator_real_losses():
     return  real_bce_fn
-def create_genertive_discriminator_fake_losses():
+def create_generative_discriminator_fake_losses():
     return fake_bce_fn
-def create_genertive_generator_fake_losses():
+def create_generative_generator_fake_losses():
     return gfake_bce_fn
 
 def create_inference_discriminator_real_losses():

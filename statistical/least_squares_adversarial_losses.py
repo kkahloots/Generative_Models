@@ -1,11 +1,11 @@
 # https://arxiv.org/abs/1611.04076
 import tensorflow as tf
 
-def create_genertive_discriminator_real_losses():
+def create_generative_discriminator_real_losses():
     return  real_ls_fn
-def create_genertive_discriminator_fake_losses():
+def create_generative_discriminator_fake_losses():
     return fake_ls_fn
-def create_genertive_generator_fake_losses():
+def create_generative_generator_fake_losses():
     return gfake_ls_fn
 
 def create_inference_discriminator_real_losses():

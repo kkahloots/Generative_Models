@@ -219,6 +219,7 @@ class VAAE(autoencoder):
         self._AA.generate_sample = self.generate_sample
         self._AA.get_variable = self.get_variable
         self._AA.inputs_shape = self.get_inputs_shape()
+        self._AA.get_inputs_shape = self.get_inputs_shape
         self._AA.latents_dim = self.latents_dim
         self._AA.save = self.save
 
