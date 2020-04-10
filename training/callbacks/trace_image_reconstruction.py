@@ -26,7 +26,8 @@ class trace_reconstruction(tf.keras.callbacks.Callback):
 
     def reconstruct(self, epoch, logs={}):
         reconstructed = self.model.reconstruct(images=self.image).numpy()
-        reconstructed = Image.fromarray((reconstructed * 255).astype(np.uint8), mode='RGB')
+        reconstructed = (reconstructed * 255).astype(np.uint8)[0]
+        reconstructed = Image.fromarray(reconstructed, mode='RGB')
 
         fig_name = os.path.join(self.filepath, 'image_at_epoch_{:06d}.png'.format(epoch))
         reconstructed.save(fig_name)
