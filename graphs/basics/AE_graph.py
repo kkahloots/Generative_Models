@@ -54,8 +54,8 @@ def decode_fn(model, latents, input_shape, apply_sigmoid=False):
         return tf.reshape(tensor=probs, shape=[-1] + [*input_shape], name='x_probablities')
     return tf.reshape(tensor=x_logits, shape=[-1] + [*input_shape], name='x_logits')
 
-def generate_sample(model, input_shape, latents_shape, eps=None):
-    if eps is None:
-        eps = tf.random.normal(shape=latents_shape)
-    generated = decode_fn(model=model, latents=eps, input_shape=input_shape, apply_sigmoid=True)
+def generate_sample(model, input_shape, latents_shape, epsilon=None):
+    if epsilon is None:
+        epsilon = tf.random.normal(shape=latents_shape)
+    generated = decode_fn(model=model, latents=epsilon, input_shape=input_shape, apply_sigmoid=True)
     return generated

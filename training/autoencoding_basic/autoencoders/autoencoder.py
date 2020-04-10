@@ -172,7 +172,7 @@ class autoencoder(tf.keras.Model):
         generated = self.generate_sample(model=self.get_variable,
                                          input_shape=self.get_inputs_shape(),
                                          latents_shape=latents_shape,
-                                         eps=random_latents)
+                                         epsilon=random_latents)
         return generated
 
     def batch_cast(self, batch):

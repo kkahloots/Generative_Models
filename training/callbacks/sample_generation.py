@@ -34,6 +34,6 @@ class SampleGeneration(tf.keras.callbacks.Callback):
         generated = self.model.generate_sample(model=self.model.get_variable,
                                                input_shape=self.model.get_inputs_shape(),
                                                latents_shape=[50, self.model.latents_dim],
-                                               eps=self.random_latents)
+                                               epsilon=self.random_latents)
         plot_and_save_generated(generated=generated, epoch=epoch, path=self.filepath, gray=self.gray_plot,
                                 save=self.save_img)
