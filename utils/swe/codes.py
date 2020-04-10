@@ -1,3 +1,5 @@
+epsilon = 1e-6
+
 import tensorflow as tf
 
 def assert_codes(instance, Class, message):

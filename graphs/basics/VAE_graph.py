@@ -13,8 +13,8 @@ def create_graph(name, variables_params, restore=None):
     return get_variables
 
 def reparameterize(mean, logvariance, latents_shape):
-    eps = tf.random.normal(shape=latents_shape)
-    return tf.add(x=eps * tf.exp(logvariance * .5) , y=mean, name='z_latents')
+    epsilon = tf.random.normal(shape=latents_shape)
+    return tf.add(x=epsilon * tf.exp(logvariance * .5), y=mean, name='z_latents')
 
 def encode_fn(**kwargs):
     model = kwargs['model']
