@@ -140,6 +140,9 @@ class autoencoder(tf.keras.Model):
     def get_inputs_shape(self):
         return list(self.get_variables()['inference'].inputs[0].shape[1:])
 
+    def get_outputs_shape(self):
+        return list(self.get_variables()['generative'].outputs[0].shape[1:])
+
     def __encode__(self, **kwargs):
         inputs = kwargs['inputs']
         for k, v in  inputs.items():
@@ -156,7 +159,7 @@ class autoencoder(tf.keras.Model):
 
     # autoencoder function
     def decode(self, latents):
-        return self.decode_fn(model=self.get_variable, latents=latents, input_shape=self.get_inputs_shape())
+        return self.decode_fn(model=self.get_variable, latents=latents, input_shape=self.get_outputs_shape())
 
     # autoencoder function
     def reconstruct(self, images):
