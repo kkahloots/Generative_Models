@@ -159,7 +159,7 @@ class autoencoder(tf.keras.Model):
 
     # autoencoder function
     def decode(self, latents):
-        return self.decode_fn(model=self.get_variable, latents=latents, input_shape=self.get_outputs_shape())
+        return self.decode_fn(model=self.get_variable, latents=latents, output_shape=self.get_outputs_shape())
 
     # autoencoder function
     def reconstruct(self, images):
