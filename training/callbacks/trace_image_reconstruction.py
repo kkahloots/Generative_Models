@@ -9,16 +9,18 @@ class trace_reconstruction(tf.keras.callbacks.Callback):
             filepath,
             image,
             gen_freq=5,
+            angel=-270,
             **kws
     ):
         self.gen_freq = gen_freq
         self.filepath = filepath
+        self.angel = angel
         self.image = image
         original_image = (self.image * 255).astype(np.uint8)
         original_image = Image.fromarray(original_image, mode='RGB')
 
-        fig_name = os.path.join(self.filepath, 'original_image.png')
-        original_image.rotate(90, expand=True).save(fig_name)
+        fig_name = os.path.join(self.filepath, 'input_image.png')
+        original_image.rotate(self.angel, expand=True).save(fig_name)
 
         tf.keras.callbacks.Callback.__init__(self, **kws)
 
@@ -35,4 +37,4 @@ class trace_reconstruction(tf.keras.callbacks.Callback):
         reconstructed = Image.fromarray(reconstructed, mode='RGB')
 
         fig_name = os.path.join(self.filepath, 'image_at_epoch_{:06d}.png'.format(epoch))
-        reconstructed.rotate(90, expand=True).save(fig_name)
+        reconstructed.rotate(self.angel, expand=True).save(fig_name)

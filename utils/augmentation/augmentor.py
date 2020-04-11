@@ -10,7 +10,7 @@ from utils.augmentation.Skitcher import Skitch
 import random
 
 
-def do_operation(opt, image, padding=50):
+def do_operation(opt, image, padding=50, rotate=False):
     image_cv = cv2.cvtColor((image * 255).astype(np.uint8), cv2.IMREAD_COLOR)  # [..., ::-1]
     dim = image_cv.shape[:2]
 
@@ -21,6 +21,9 @@ def do_operation(opt, image, padding=50):
         image_cv = cv2.copyMakeBorder(image_cv, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
 
     image = opt.perform_operation([Image.fromarray(image_cv)])[0]
+    if rotate:
+        image = image.rotate(270, expand=True)
+
     return np.array(image.resize(dim)) / 255.0
     # image_cv = cv2.cvtColor((np.array(image_cv) * 255).astype(np.uint8), cv2.IMREAD_COLOR)
 
