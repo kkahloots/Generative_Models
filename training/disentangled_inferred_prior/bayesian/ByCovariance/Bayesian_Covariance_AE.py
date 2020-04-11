@@ -25,7 +25,7 @@ class Bayesian_Covariance_AE(basicAE):
         if 'metrics' in kwargs.keys():
             self.ae_metrics = kwargs.pop('metrics', None)
         else:
-            self.ae_metrics = create_metrics([self.batch_size] + self.get_inputs_shape()[-3:])
+            self.ae_metrics = create_metrics([self.batch_size] + self.get_outputs_shape()[-3:])
 
         tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
