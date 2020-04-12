@@ -6,6 +6,7 @@ from evaluation.quantitive_metrics.sharp_difference import prepare_sharpdiff
 from statistical.ae_losses import prepare_mean_absolute_error, prepare_mean_squared_error
 
 def create_metrics(outputs_flat_shape):
+
     return {'x_logits': [prepare_psnr(outputs_flat_shape),
                          prepare_total_variation(outputs_flat_shape),
                          prepare_ssim_multiscale(outputs_flat_shape),

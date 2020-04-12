@@ -44,7 +44,7 @@ class FileImageGenerator(ImageDataGenerator):
                              save_format=save_format)
 
 
-def create_image_lists(image_dir, validation_pct, valid_imgae_formats, max_num_images_per_class=2**27-1):
+def create_image_lists(image_dir, validation_pct, valid_imgae_formats, max_num_images_per_class=2**27-1, verbose = 1):
     """Builds a list of training images from the file system.
 
     Analyzes the sub folders in the image directory, splits them into stable
@@ -70,7 +70,8 @@ def create_image_lists(image_dir, validation_pct, valid_imgae_formats, max_num_i
         dir_name = os.path.basename(sub_dir)
         if dir_name == image_dir:
             continue
-        log_message("Looking for images in '{}'".format(dir_name), logging.DEBUG)
+        if verbose == 1:
+            log_message("Looking for images in '{}'".format(dir_name), logging.DEBUG)
 
         if isinstance(valid_imgae_formats, str):
             valid_imgae_formats = [valid_imgae_formats]
@@ -80,14 +81,17 @@ def create_image_lists(image_dir, validation_pct, valid_imgae_formats, max_num_i
             file_list.extend(glob.glob(file_glob))
         if not file_list:
             msg = 'No files found'
-            log_message(msg, logging.WARN)
+            if verbose == 1:
+                log_message(msg, logging.WARN)
             warnings.warn(msg)
             continue
         else:
-            log_message('{} file found'.format(len(file_list)), logging.INFO)
+            if verbose == 1:
+                log_message('{} file found'.format(len(file_list)), logging.INFO)
         if len(file_list) < 20:
             msg = 'Folder has less than 20 images, which may cause issues.'
-            log_message(msg, logging.WARN)
+            if verbose == 1:
+                log_message(msg, logging.WARN)
             warnings.warn(msg)
         elif len(file_list) > max_num_images_per_class:
             msg='WARNING: Folder {} has more than {} images. Some '\
