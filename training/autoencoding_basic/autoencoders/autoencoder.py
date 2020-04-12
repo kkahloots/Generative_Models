@@ -60,7 +60,7 @@ class autoencoder(tf.keras.Model):
         self.output_names = ['x_logits']
 
     def get_flat_shape(self):
-        return (self.batch_size, ) + self.get_outputs_shape()[-3:]
+        return (self.batch_size, ) + self.get_variables()['generative'].outputs[0].shape[1:][-3:]
 
     # override function
     def compile(
