@@ -25,11 +25,6 @@ def do_operation(opt, image, padding=50, rotate=False):
         image = image.rotate(270, expand=True)
 
     return np.array(image.resize(dim)) / 255.0
-    # image_cv = cv2.cvtColor((np.array(image_cv) * 255).astype(np.uint8), cv2.IMREAD_COLOR)
-
-    # resize image
-    # image_cv = cv2.resize(image_cv, dim, interpolation=cv2.INTER_AREA)
-    # return np.array(image_cv)
 
 
 operations = {0: lambda: Skew(probability=1, skew_type="RANDOM", magnitude=0.7),

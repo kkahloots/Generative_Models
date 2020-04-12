@@ -121,14 +121,12 @@ def prepare_ssim_multiscale(inputs_flat_shape):
         # Remove the cs score for the last scale. In the MS-SSIM calculation,
         # we use the l(p) at the highest scale. l(p) * cs(p) is ssim(p).
         mcs.pop()  # Remove the cs score for the last scale.
-        mcs_and_ssim = tf.stack(
-            mcs + [tf.nn.relu(ssim_per_channel)], axis=-1)
+        mcs_and_ssim = tf.stack(mcs + [tf.nn.relu(ssim_per_channel)], axis=-1)
+
         # Take weighted geometric mean across the scale axis.
-        ms_ssim = tf.reduce_prod(
-            tf.pow(mcs_and_ssim, power_factors), [-1])
+        ms_ssim = tf.reduce_prod(tf.pow(mcs_and_ssim, power_factors), [-1])
 
         return tf.reduce_mean(ms_ssim, [-1])  # Avg over color channels.
-
 
     def _fspecial_gauss(size, sigma):
         """Function to mimic the 'fspecial' gaussian MATLAB function."""
