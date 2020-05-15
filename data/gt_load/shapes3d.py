@@ -21,6 +21,7 @@ import numpy as np
 import dask.array as da
 from six.moves import range
 import tensorflow as tf
+import h5py
 
 # dataset_path = "..//gt_datasets"
 #
@@ -46,12 +47,16 @@ class Shapes3D(gt_data.GroundTruthData):
     """
 
     def __init__(self, data_path):
-        with tf.io.gfile.GFile(data_path, "rb") as f:
-            # Data was saved originally using python2, so we need to set the encoding.
-            data = np.load(f, encoding="latin1")
-        images = da.from_array(data["images"])
-        labels = da.from_array(data["labels"])
-        n_samples = np.prod(images.shape[0:6])
+        # load dataset
+        dataset = h5py.File(data_path, 'r')
+        n_samples = int(1e4)
+        #with h5py.File(data_path, 'r') as dataset:
+        images = dataset['images'][()][:n_samples]
+        labels = dataset['labels'][()][:n_samples]
+
+        #n_samples = images.shape[0]
+
+
         self.images = (
             images.reshape([n_samples, 64, 64, 3]).astype(np.float32) / 255.)
         features = labels.reshape([n_samples, 6])

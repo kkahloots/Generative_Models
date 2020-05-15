@@ -80,10 +80,10 @@ def load(dataset_name, dataset_path):
         return mpi3d.MPI3D(data_path=dataset_path, mode="mpi3d_real")
 
     elif dataset_name == "shapes3d":
-        S3D_PATH = os.path.join(dataset_path,
-                                 '3dshapes',
-                                 "look-at-object-room_floor-hueXwall-hueXobj-"
-                                 "hueXobj-sizeXobj-shapeXview-azi.npz")
+        S3D_PATH = dataset_path#os.path.join(dataset_path,
+                               #  '3dshapes',
+                               #  "look-at-object-room_floor-hueXwall-hueXobj-"
+                               #  "hueXobj-sizeXobj-shapeXview-azi.npz")
 
         return shapes3d.Shapes3D(data_path=S3D_PATH)
 
