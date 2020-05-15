@@ -85,6 +85,6 @@ class Shapes3D(gt_data.GroundTruthData):
         return self.state_space.sample_latents_factors(num, random_state)
 
     def sample_observations_from_factors(self, factors, random_state):
-        all_factors = self.state_space.sample_all_factors(factors, random_state)
+        all_factors = self.state_space.sample_all_factors(factors, random_state, self.images.shape[0])
         indices = np.array(np.dot(all_factors, self.factor_bases), dtype=np.int64)
         return self.images[indices]
