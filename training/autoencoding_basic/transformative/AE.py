@@ -11,7 +11,6 @@ class autoencoder(basicAE):
         self.episode_len = episode_len
         basicAE.__init__(self, **kwargs)
 
-
     def get_flat_shape(self):
         return (self.batch_size * self.episode_len, ) + self.get_variables()['generative'].outputs[0].shape[1:][-3:]
 

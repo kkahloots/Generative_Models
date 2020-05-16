@@ -56,7 +56,6 @@ class Shapes3D(gt_data.GroundTruthData):
 
         #n_samples = images.shape[0]
 
-
         self.images = (
             images.reshape([n_samples, 64, 64, 3]).astype(np.float32) / 255.)
         features = labels.reshape([n_samples, 6])
@@ -85,6 +84,8 @@ class Shapes3D(gt_data.GroundTruthData):
         return self.state_space.sample_latents_factors(num, random_state)
 
     def sample_observations_from_factors(self, factors, random_state):
-        all_factors = self.state_space.sample_all_factors(factors, random_state, self.images.shape[0])
+        all_factors = self.state_space.sample_all_factors(factors, random_state)
+
         indices = np.array(np.dot(all_factors, self.factor_bases), dtype=np.int64)
+
         return self.images[indices]
