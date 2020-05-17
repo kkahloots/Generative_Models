@@ -45,19 +45,65 @@ def bootstrapping_additive(data_generator, func, stopping_func, tolerance_thresh
 
     return results
 
+import tensorflow as tf
 def slerp(val, low, high):
-    """Code from https://github.com/soumith/dcgan.torch/issues/14"""
-    omega = np.arccos(np.clip(np.dot(low / np.linalg.norm(low), high.transpose() / np.linalg.norm(high)), -1, 1))
-    so = np.max(np.sin(omega))
-    try:
-        if omega.shape[1] != low.shape[1]:
-            omega = np.hstack([omega, omega])
-    except:
-        pass
+    # Val must be Batch_size, n_timesteps
+    # low must be batch_size, n_dimensions
+    # high must be batch_size, n_dimensions
+    if len(low.shape)==1:
+        low = np.expand_dims(low, 1)
+    if len(high.shape)==1:
+        high = np.expand_dims(high, 1)
 
-    # l1 = lambda low, high, val: (1.0-val) * low + val * high
-    # l2 = lambda low, high, val, so, omega: np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high
-    if np.all(so == 0):
-        return (1.0 - val) * low + val * high  # L'Hopital's rule/LERP
-    return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+    low = tf.cast(low, 'float32')
+    high = tf.cast(high, 'float32')
 
+    dim_size = low.shape[-1]
+    time_steps = 1#val.shape[-1]
+
+    p1 = low / tf.tile(tf.expand_dims(tf.norm(low, axis=1), axis=1), [1, dim_size])
+    p2 = high / tf.tile(tf.expand_dims(tf.norm(high, axis=1), axis=1), [1, dim_size])
+    dot = tf.reduce_sum(p1 * p2, axis=-1)  # batchwise dot of our Batch*num_dims.
+
+    omega = tf.acos(tf.clip_by_value(dot, -1, 1, ))
+    so = tf.sin(omega)
+    # if (so == 0):
+    # return (1.0-val)*low + val * high
+    so = tf.tile(tf.expand_dims(tf.expand_dims(so, axis=1), axis=2), [1, time_steps, dim_size])
+    omega = tf.tile(tf.expand_dims(tf.expand_dims(omega, axis=1), axis=2), [1, time_steps, dim_size])
+    #val = tf.tile(tf.expand_dims(val, axis=2), [1, 1, dim_size])
+    low = tf.tile(tf.expand_dims(low, axis=1), [1, time_steps, 1])
+    high = tf.tile(tf.expand_dims(high, axis=1), [1, time_steps, 1])
+    lerp = np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+    return lerp
+
+# def slerp(val, low, high):
+#     omega = np.arccos(np.dot(low/np.linalg.norm(low), high.transpose()/np.linalg.norm(high)))
+#     so = np.sin(omega)
+#     if np.all(so == 0):
+#         return (1.0-val) * low + val * high # L'Hopital's rule/LERP
+#     print('xxx', 'val',val,  val.shape)
+#     print('xxx', 'so', so.shape)
+#     print('xxx', 'omega', omega.shape)
+#     print('xxx', 'high', high.shape)
+#     print('xxx', 'low', low.shape)
+#     return np.sin((1.0-val)*omega) / so * low + np.sin(val*omega) / so * high
+
+# def slerp(val, low, high):
+#     """Code from https://github.com/soumith/dcgan.torch/issues/14"""
+#     omega = np.arccos(np.dot(low / np.linalg.norm(low), (high / np.linalg.norm(high)).transpose()))
+#     so = np.max(np.sin(omega),axis=1)
+#     # try:
+#     #    if omega.shape[1] != low.shape[1]:
+#     #        omega = np.hstack([omega, omega])
+#     # except:
+#     #    pass
+#     print('xxx', 'omega', omega.shape)
+#     print('xxx', 'so', so.shape)
+#     print('xxx', 'high', high.shape)
+#     print('xxx', 'low', low.shape)
+#
+#     if np.all(so == 0):
+#         return (1.0 - val) * low + val * high  # L'Hopital's rule/LERP
+#     return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+#

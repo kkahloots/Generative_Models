@@ -87,9 +87,6 @@ class Shapes3D(gt_data.GroundTruthData):
 
     def sample_observations_from_factors(self, factors, random_state):
         all_factors = self.state_space.sample_all_factors(factors, random_state)
-        #print('xxx', factors.shape)
-        #print('xxx', all_factors.shape)
 
         indices = np.array(np.dot(all_factors, self.factor_bases), dtype=np.int64)
-        print('xxx', indices)
         return self.images[indices]

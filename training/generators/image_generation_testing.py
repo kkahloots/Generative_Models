@@ -21,7 +21,7 @@ def reconstruct_from_a_batch(model, data_generator, save_dir):
         image.save(fig_name)
 
         fig_name = os.path.join(save_dir, 'original_image_{:06d}.png'.format(i))
-        image = Image.fromarray((original_image * 255).astype(np.uint8), mode='RGB')
+        image = Image.fromarray((original_image.numpy() * 255).astype(np.uint8), mode='RGB')
         image.save(fig_name)
 
 
@@ -67,9 +67,9 @@ def generate_images_like_a_batch(model, data_generator, save_dir):
     ln = np.random.normal(size=[latents_real.shape[1]])
     latents_t = np.array([ln for _ in range(latents_real.shape[0])])
     lerp_t = np.random.uniform(size=1)[0]
+    #lerp_t = np.array([lerp_t for _ in range(latents_real.shape[0])])
     latents_e = slerp(lerp_t, latents_real, latents_t)
     images = model.decode(latents_e).numpy()
-
 
     for i, (original_image, synthetic_image) in tqdm(enumerate(zip(original_data, images)), position=0):
         fig_name = os.path.join(save_dir, 'synthetic_image_{:06d}.png'.format(i))
@@ -77,7 +77,7 @@ def generate_images_like_a_batch(model, data_generator, save_dir):
         image.save(fig_name)
 
         fig_name = os.path.join(save_dir, 'original_image_{:06d}.png'.format(i))
-        image = Image.fromarray((original_image * 255).astype(np.uint8), mode='RGB')
+        image = Image.fromarray((original_image.numpy() * 255).astype(np.uint8), mode='RGB')
         image.save(fig_name)
 
 
@@ -139,7 +139,6 @@ def interpolate(model, input1, input2):
 
     for idx in decodes:
         l = []
-
         l += [input1[idx:idx + 1][0]]
         l += decodes[idx]
         l += [input2[idx:idx + 1][0]]
