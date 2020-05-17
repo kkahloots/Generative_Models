@@ -67,7 +67,6 @@ def generate_images_like_a_batch(model, data_generator, save_dir):
     ln = np.random.normal(size=[latents_real.shape[1]])
     latents_t = np.array([ln for _ in range(latents_real.shape[0])])
     lerp_t = np.random.uniform(size=1)[0]
-    #lerp_t = np.array([lerp_t for _ in range(latents_real.shape[0])])
     latents_e = slerp(lerp_t, latents_real, latents_t)
     images = model.decode(latents_e).numpy()
 
@@ -90,8 +89,6 @@ def generate_images_randomly(model, save_dir):
         image = Image.fromarray((image * 255).astype(np.uint8), mode='RGB')
         image.save(fig_name)
 
-
-
 def interpolate_a_batch(model, data_generator, save_dir, delay=10):
     # Generate latents from the data
     original_data = next(data_generator)
@@ -100,6 +97,7 @@ def interpolate_a_batch(model, data_generator, save_dir, delay=10):
     images = []
     last_ix = 0
     for ix in tqdm(range(0, len(original_data) // 2 * 2 - 2, 2), position=0):
+        print()
         images += interpolate(model, original_data[last_ix:ix + 1], original_data[ix + 1:ix + 2])
         last_ix = ix + 1
     images += interpolate(model, original_data[ix + 1:ix + 2], original_data[0:1])
@@ -108,9 +106,13 @@ def interpolate_a_batch(model, data_generator, save_dir, delay=10):
     i = 0
     for image_raw in images:
         for image in image_raw[:-1]:
-            # fig_name = os.path.join(save_dir, 'original_image_{:06d}.png'.format(i))
+            try:
+                image = image.numpy()
+                image = image[0]
+            except:
+                pass
+
             image = Image.fromarray((image * 255).astype(np.uint8), mode='RGB')
-            # image.save(fig_name)
             images_flat += [image]
             i += 1
 
@@ -119,6 +121,9 @@ def interpolate_a_batch(model, data_generator, save_dir, delay=10):
                         loop=0xffff)
 
 def interpolate(model, input1, input2):
+    len_shape = min(input1.shape[0], input2.shape[0])
+    input1 = input1[:len_shape]
+    input2 = input2[:len_shape]
 
     z1 = model.encode(input1).numpy()
     z2 = model.encode(input2).numpy()
@@ -127,6 +132,8 @@ def interpolate(model, input1, input2):
     for idx, ratio in tqdm(enumerate(np.linspace(0, 1, 10)), position=0):
         decode = dict()
         z = np.stack([slerp(ratio, r1, r2) for r1, r2 in zip(z1, z2)])
+        if len(z.shape)>2:
+            z = np.reshape(z, z.shape[:2])
         z_decode = model.decode(z).numpy()
 
         for i in range(z_decode.shape[0]):
@@ -139,9 +146,10 @@ def interpolate(model, input1, input2):
 
     for idx in decodes:
         l = []
-        l += [input1[idx:idx + 1][0]]
+        #l += [input1[idx:idx + 1][0]]
+        l += [input1]
         l += decodes[idx]
-        l += [input2[idx:idx + 1][0]]
+        l += [input2]
 
         imgs.append(l)
 
