@@ -193,7 +193,7 @@ def prepare_ssim_multiscale(inputs_flat_shape):
         def reducer(x):
             shape = tf.shape(x)
             x = tf.reshape(x, shape=tf.concat([[-1], shape[-3:]], 0))
-            y = tf.nn.depthwise_conv2d(x, kernel, strides=[1, 1, 1, 1], padding='VALID')
+            y = tf.nn.depthwise_conv2d(x, kernel, strides=[1, 1, 1, 1], padding='SAME')
             return tf.reshape(
                 y, tf.concat([shape[:-3], tf.shape(y)[1:]], 0))
 

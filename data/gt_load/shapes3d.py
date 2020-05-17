@@ -51,21 +51,23 @@ class Shapes3D(gt_data.GroundTruthData):
         dataset = h5py.File(data_path, 'r')
         n_samples = int(1e4)
         #with h5py.File(data_path, 'r') as dataset:
+        n_total = dataset['images'][()].shape[0]
         images = dataset['images'][()][:n_samples]
         labels = dataset['labels'][()][:n_samples]
-
-        #n_samples = images.shape[0]
 
         self.images = (
             images.reshape([n_samples, 64, 64, 3]).astype(np.float32) / 255.)
         features = labels.reshape([n_samples, 6])
         self.factor_sizes = [10, 10, 10, 8, 4, 15]
+
         self.latents_factor_indices = list(range(6))
         self.num_total_factors = features.shape[1]
         self.state_space = util.SplitDiscreteStateSpace(self.factor_sizes,
                                                         self.latents_factor_indices)
         self.factor_bases = np.prod(self.factor_sizes) / np.cumprod(
             self.factor_sizes)
+        self.factor_bases *= (n_samples / n_total)
+        self.factor_bases = np.clip(self.factor_bases, 0, n_samples)
 
     @property
     def num_factors(self):
@@ -85,7 +87,9 @@ class Shapes3D(gt_data.GroundTruthData):
 
     def sample_observations_from_factors(self, factors, random_state):
         all_factors = self.state_space.sample_all_factors(factors, random_state)
+        #print('xxx', factors.shape)
+        #print('xxx', all_factors.shape)
 
         indices = np.array(np.dot(all_factors, self.factor_bases), dtype=np.int64)
-
+        print('xxx', indices)
         return self.images[indices]
