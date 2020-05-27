@@ -41,14 +41,14 @@ def create_variables(variables_params, model_name, restore=None):
 
 def encode_fn(**kwargs):
     model = kwargs['model']
-    inputs = kwargs['inputs']
+    inputs = kwargs['inputs']['inference']
     z = model('inference', [inputs])
     return {
         'z_latents': z
     }
 
 def decode_fn(model, latents, output_shape, apply_sigmoid=False):
-    x_logits = model('generative', [latents])
+    x_logits = model('generative', [latents['z_latents']])
     if apply_sigmoid:
         probs = tf.sigmoid(x_logits)
         return tf.reshape(tensor=probs, shape=[-1] + [*output_shape], name='x_probablities')
@@ -57,5 +57,5 @@ def decode_fn(model, latents, output_shape, apply_sigmoid=False):
 def generate_sample(model, input_shape, latents_shape, epsilon=None):
     if epsilon is None:
         epsilon = tf.random.normal(shape=latents_shape)
-    generated = decode_fn(model=model, latents=epsilon, output_shape=input_shape, apply_sigmoid=True)
+    generated = decode_fn(model=model, latents={'z_latents': epsilon}, output_shape=input_shape, apply_sigmoid=True)
     return generated
