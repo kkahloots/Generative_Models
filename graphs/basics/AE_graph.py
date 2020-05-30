@@ -41,7 +41,11 @@ def create_variables(variables_params, model_name, restore=None):
 
 def encode_fn(**kwargs):
     model = kwargs['model']
-    inputs = kwargs['inputs']['inference']
+    if 'inference' in kwargs['inputs']:
+        inputs = kwargs['inputs']['inference']
+    else:
+        inputs = kwargs['inputs']
+
     z = model('inference', [inputs])
     return {
         'z_latents': z
