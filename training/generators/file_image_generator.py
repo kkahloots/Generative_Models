@@ -119,11 +119,11 @@ def create_image_lists(image_dir, validation_pct, valid_imgae_formats, max_num_i
         }
     return image_lists
 
-def get_generators(images_list, image_dir, image_size, batch_size, class_mode, episode_len=None, episode_shift=None):
+def get_generators(images_list, image_dir, image_size, batch_size, class_mode, episode_len=None, episode_shift=None, scaler=255.0):
 
-    train_datagen = FileImageGenerator(rescale=1. / 255)
+    train_datagen = FileImageGenerator(rescale=1. / scaler)
 
-    valid_datagen = FileImageGenerator(rescale=1. / 255)
+    valid_datagen = FileImageGenerator(rescale=1. / scaler)
 
     train_generator = train_datagen.flow_from_image_lists(
         image_lists=images_list,
