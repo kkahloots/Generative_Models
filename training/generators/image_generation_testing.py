@@ -21,7 +21,7 @@ def reconstruct_from_a_batch(model, data_generator, save_dir):
         image.save(fig_name)
 
         fig_name = os.path.join(save_dir, 'original_image_{:06d}.png'.format(i))
-        image = Image.fromarray((original_image.numpy() * 255).astype(np.uint8), mode='RGB')
+        image = Image.fromarray((original_image * 255).astype(np.uint8), mode='RGB')
         image.save(fig_name)
 
 
@@ -76,7 +76,7 @@ def generate_images_like_a_batch(model, data_generator, save_dir):
         image.save(fig_name)
 
         fig_name = os.path.join(save_dir, 'original_image_{:06d}.png'.format(i))
-        image = Image.fromarray((original_image.numpy() * 255).astype(np.uint8), mode='RGB')
+        image = Image.fromarray((original_image * 255).astype(np.uint8), mode='RGB')
         image.save(fig_name)
 
 
@@ -112,6 +112,8 @@ def interpolate_a_batch(model, data_generator, save_dir, delay=10):
             except:
                 pass
 
+            if image.shape[0]==1:
+                image = image[0]
             image = Image.fromarray((image * 255).astype(np.uint8), mode='RGB')
             images_flat += [image]
             i += 1

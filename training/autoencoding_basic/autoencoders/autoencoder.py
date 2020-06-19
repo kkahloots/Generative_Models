@@ -43,7 +43,7 @@ class autoencoder(tf.keras.Model):
     def __init_autoencoder__(self, **kwargs):
         # connect the graph x' = decode(encode(x))
         inputs_dict= {k: v.inputs[0] for k, v in self.get_variables().items() if k == 'inference'}
-        latents = self.__encode__(inputs=inputs_dict)
+        latents = self.__encode__(inference_inputs=inputs_dict)
         x_logits = self.decode(latents)
         outputs_dict =  [x_logits]
 
@@ -147,7 +147,7 @@ class autoencoder(tf.keras.Model):
         return list(self.get_variables()['generative'].outputs[0].shape[1:])
 
     def __encode__(self, **kwargs):
-        inputs = kwargs['inputs']
+        inputs = kwargs['inference_inputs']
         for k, v in  inputs.items():
             if inputs[k].shape == self.get_inputs_shape():
                 inputs[k] = tf.reshape(inputs[k], (1, ) + self.get_inputs_shape())
@@ -158,11 +158,11 @@ class autoencoder(tf.keras.Model):
 
     # autoencoder function
     def encode(self, x):
-        return self.__encode__(inputs={'inputs': x})['z_latents']
+        return self.__encode__(inference_inputs={'inference_inputs': x})['generative_inputs']
 
     # autoencoder function
     def decode(self, latents):
-        return self.decode_fn(model=self.get_variable, latents=latents, output_shape=self.get_outputs_shape())
+        return self.decode_fn(model=self.get_variable, latents={'generative_inputs': latents}, output_shape=self.get_outputs_shape())
 
     # autoencoder function
     def reconstruct(self, images):

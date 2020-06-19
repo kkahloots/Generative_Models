@@ -3,6 +3,7 @@ import numpy as np
 import time
 epsilon=1e-4
 from tensorflow.keras.applications import VGG16
+import dask.delayed as delayed
 
 def batch_pairwise_distances(U, V):
     """ Compute pairwise distances between two batches of feature vectors."""
@@ -158,11 +159,11 @@ def precision_score(model, data_generator, nhood_size=3, row_batch_size=10000, c
             yield knn_precision
 
     knn_precision_mean = bootstrapping_additive(
-        data_generator=model_random_images_generator(), func=lambda x: x, \
+        data_generator=model_random_images_generator(), func=delayed(lambda x: x), \
         stopping_func=mean_fn, tolerance_threshold=tolerance_threshold, max_iteration=max_iteration
     )
 
-    return knn_precision_mean
+    return knn_precision_mean.compute()
 
 def recall_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_batch_size=10000,
                     tolerance_threshold=1e-6, max_iteration=200):
@@ -200,8 +201,8 @@ def recall_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_
             yield knn_recall
 
     knn_recall_mean = bootstrapping_additive(
-        data_generator=model_random_images_generator(), func=lambda x: x, \
+        data_generator=model_random_images_generator(), func=delayed(lambda x: x), \
         stopping_func=mean_fn, tolerance_threshold=tolerance_threshold, max_iteration=max_iteration
     )
 
-    return knn_recall_mean
+    return knn_recall_mean.compute()

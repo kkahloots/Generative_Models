@@ -1,6 +1,8 @@
 import logging
 
 import tensorflow as tf
+import sys
+
 
 from graphs.builder import create_models, load_models
 from statistical.ae_losses import expected_loglikelihood_with_lower_bound
@@ -41,18 +43,18 @@ def create_variables(variables_params, model_name, restore=None):
 
 def encode_fn(**kwargs):
     model = kwargs['model']
-    if 'inference' in kwargs['inputs']:
-        inputs = kwargs['inputs']['inference']
+    if 'inference' in kwargs['inference_inputs']:
+        inputs = kwargs['inference_inputs']['inference']
     else:
-        inputs = kwargs['inputs']
+        inputs = kwargs['inference_inputs']
 
     z = model('inference', [inputs])
     return {
-        'z_latents': z
+        'generative_inputs': z
     }
 
 def decode_fn(model, latents, output_shape, apply_sigmoid=False):
-    x_logits = model('generative', [latents['z_latents']])
+    x_logits = model('generative', [latents['generative_inputs']])
     if apply_sigmoid:
         probs = tf.sigmoid(x_logits)
         return tf.reshape(tensor=probs, shape=[-1] + [*output_shape], name='x_probablities')
@@ -61,5 +63,5 @@ def decode_fn(model, latents, output_shape, apply_sigmoid=False):
 def generate_sample(model, input_shape, latents_shape, epsilon=None):
     if epsilon is None:
         epsilon = tf.random.normal(shape=latents_shape)
-    generated = decode_fn(model=model, latents={'z_latents': epsilon}, output_shape=input_shape, apply_sigmoid=True)
+    generated = decode_fn(model=model, latents={'generative_inputs': epsilon}, output_shape=input_shape, apply_sigmoid=True)
     return generated

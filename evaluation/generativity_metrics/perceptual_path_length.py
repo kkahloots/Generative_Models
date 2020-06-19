@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.applications import VGG16
 from evaluation.generativity_metrics.shared_api import mean_fn, sigma_fn, bootstrapping_additive, slerp
 import numpy as np
+import dask.delayed as delayed
 
 epsilon=1e-4
 def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-6, max_iteration=200, batch_size=10):
@@ -57,7 +58,7 @@ def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-6
             lerp_t = np.random.uniform(size=1)[0]
 
             latents_e = slerp(lerp_t, latents_real, latents_t)
-            images = model.decode(latents_e).numpy()
+            images = model.decode(latents_e)#.numpy()
             # images = (images*255).astype(np.uint8)
 
             yield images[:batch_size]
@@ -69,7 +70,7 @@ def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-6
         return np.mean(distances)
 
     ppl_mean = bootstrapping_additive(
-        data_generator=model_random_images_generator(), func=calculate_distances, \
+        data_generator=model_random_images_generator(), func=delayed(calculate_distances), \
         stopping_func=stopping_fn, tolerance_threshold=tolerance_threshold, max_iteration=max_iteration
     )
 
