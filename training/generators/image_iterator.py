@@ -1,7 +1,8 @@
 import os
 import numpy as np
+import dask.array as da
 import tensorflow as tf
-from keras.preprocessing.image import Iterator, load_img, img_to_array, array_to_img
+from tensorflow.keras.preprocessing.image import Iterator, load_img, img_to_array, array_to_img
 from keras import backend as K
 import logging
 from utils.reporting.logging import log_message
@@ -57,10 +58,10 @@ class ImageIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='jpeg',
-                 dtype=K.floatx()
+                 dtype=np.float32
                  ):
         if data_format is None:
-            data_format = K.image_data_format()
+            data_format = tf.keras.backend.image_data_format()
 
         classes = list(image_lists.keys())
         self.category = category
@@ -267,9 +268,9 @@ class ImageIterator(Iterator):
             if self.class_mode == 'sparse':
                 batch_y = self.classes[index_array]
             elif self.class_mode == 'binary':
-                batch_y = self.classes[index_array].astype(K.floatx())
+                batch_y = self.classes[index_array].astype(tf.float32)
             elif self.class_mode == 'categorical':
-                batch_y = np.zeros((len(batch_x), self.num_class),dtype=K.floatx())
+                batch_y = np.zeros((len(batch_x), self.num_class),dtype=tf.float32)
                 for i, label in enumerate(self.classes[index_array]):
                     batch_y[i, label] = 1.
 

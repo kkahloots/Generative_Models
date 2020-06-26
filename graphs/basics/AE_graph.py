@@ -50,7 +50,7 @@ def encode_fn(**kwargs):
 
     z = model('inference', [inputs])
     return {
-        'generative_inputs': z
+        'z_latents': z
     }
 
 def decode_fn(model, latents, output_shape, apply_sigmoid=False):

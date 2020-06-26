@@ -62,7 +62,7 @@ class Covariance_VAE(VAE):
             'z_latents': encoded['z_latents'],
             'x_mean': encoded['inference_mean'],
             'x_logvariance': encoded['inference_logvariance'],
-            'logpdf': logpdf,
+            'x_logpdf': logpdf,
             'covariance_regularized': covariance_regularizer
         }
 

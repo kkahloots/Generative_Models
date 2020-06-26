@@ -18,7 +18,7 @@ def reparameterize(mean, logvariance, latents_shape):
 
 def encode_fn(**kwargs):
     model = kwargs['model']
-    inputs = kwargs['inputs']
+    inputs = kwargs['inference_inputs']
     latents_shape = kwargs['latents_shape']
     mean, logvariance = model('inference_mean', [inputs['x_mean']]), model('inference_logvariance', [inputs['x_logvariance']])
     z = reparameterize(mean, logvariance, latents_shape)

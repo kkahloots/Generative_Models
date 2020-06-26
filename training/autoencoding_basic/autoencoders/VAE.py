@@ -20,7 +20,7 @@ class VAE(autoencoder):
 
     # autoencoder function
     def encode(self, x):
-        return self.__encode__(inputs={'x_mean': x, 'x_logvariance': x})['z_latents']
+        return self.__encode__(inference_inputs={'x_mean': x, 'x_logvariance': x})['z_latents']
 
     def __init_autoencoder__(self, **kwargs):
         # mean, logvariance = self.__encode__(inputs)
@@ -30,7 +30,7 @@ class VAE(autoencoder):
             'x_mean': self.get_variables()['inference_mean'].inputs[0],
             'x_logvariance': self.get_variables()['inference_logvariance'].inputs[0]
         }
-        encoded = self.__encode__(inputs=inputs_dict)
+        encoded = self.__encode__(inference_inputs=inputs_dict)
         x_logits = self.decode(encoded['z_latents'])
 
         logpdf = log_normal_pdf(
@@ -49,7 +49,7 @@ class VAE(autoencoder):
             'z_latents': encoded['z_latents'],
             'x_mean': encoded['inference_mean'],
             'x_logvariance': encoded['inference_logvariance'],
-            'logpdf': logpdf
+            'x_logpdf': logpdf
         }
 
         tf.keras.Model.__init__(
@@ -79,7 +79,7 @@ class VAE(autoencoder):
     # override function
     def compile(
             self,
-            optimizer=RAdam(),
+            optimizer=tf.optimizers.Adam(),#RAdam(),
             loss=None,
             **kwargs
     ):
@@ -93,6 +93,7 @@ class VAE(autoencoder):
             self.ae_metrics = kwargs.pop('metrics', None)
         else:
             self.ae_metrics = create_metrics(self.get_flat_shape())
+        self.ae_metrics = None
 
         tf.keras.Model.compile(self, optimizer=optimizer, loss=self.ae_losses, metrics=self.ae_metrics, **kwargs)
         print(self.summary())
@@ -114,4 +115,5 @@ class VAE(autoencoder):
                    'z_latents': 0.0,
                    'x_logpdf':0.0
                }
+
 

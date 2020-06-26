@@ -191,7 +191,7 @@ class VAAE(autoencoder):
             'z_latents': encoded['z_latents'],
             'inference_mean': encoded['inference_mean'],
             'inference_logvariance': encoded['inference_logvariance'],
-            'logpdf': logpdf,
+            'x_logpdf': logpdf,
             **outputs_dict
         }
 
