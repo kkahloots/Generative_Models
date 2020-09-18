@@ -40,6 +40,7 @@ class DSprites(gt_data.GroundTruthData):
     """
 
     def __init__(self, data_path, scream_path, latents_factor_indices=None):
+
         # By default, all factors (including shape) are considered ground truth
         # factors.
         self.scream_path = scream_path

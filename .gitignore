@@ -133,3 +133,10 @@ dmypy.json
 experiments/*
 /data/pokemon_images/
 /experiments/
+/data/.pokemon/pokemon_combined.tar.bz
+/data/.pokemon/Pokemon_LMDB/
+/data/.pokemon/Pokemon_LMDB/
+/data/.pokemon/Pokemon_LMDB/
+notebooks/pokemon/basic/dense/AE/pokemon_AE_Dense_reconst_ellwlb.ipynb
+pokemon.tar.bz
+/data/.pokemon/Pokemon_LMDB/
