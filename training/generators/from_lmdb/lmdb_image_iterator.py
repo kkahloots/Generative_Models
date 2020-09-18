@@ -22,8 +22,7 @@ class LMDB_ImageIterator(Iterator):
                  seed=None,
                  save_to_dir=None,
                  save_prefix='',
-                 save_format='jpeg',
-                 dtype=K.floatx(),
+                 save_format='jpeg'
                  ):
 
         self.category = category
@@ -47,7 +46,7 @@ class LMDB_ImageIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         print(index_array)
-        images, labels = [], []
+        images, labels = [], {}
 
         if len(index_array) < self.batch_size:
             diff = self.batch_size // len(index_array) + 1
@@ -64,6 +63,9 @@ class LMDB_ImageIterator(Iterator):
                                    (not attr in ['image', 'channels', 'size'])]
 
                     for label in labels_list:
-                        _lab = {label: eval(f'dataset.{label}')}
-                        labels = {**labels, **_lab}
+
+                        if label in labels.keys():
+                            labels[label].append(eval(f'dataset.{label}'))
+                        else:
+                            labels.update({label: [eval(f'dataset.{label}')]})
         return {'images': images, **labels}
