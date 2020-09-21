@@ -8,7 +8,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from transformation.lmdb_transformer import LmdbTransformer
 
 
-from utils.data_and_files.data_utils import as_bytes
+from utils.data_and_files.data_utils import as_bytes, infer_type
 from utils.reporting.logging import log_message
 from training.generators.from_lmdb.lmdb_image_iterator import LMDB_ImageIterator
 
@@ -20,7 +20,6 @@ class LMDB_ImageGenerator(ImageDataGenerator):
                              batch_size,
                              episode_len=None,
                              episode_shift=None,
-                             color_mode='rgb',
                              shuffle=True,
                              seed=None
                              ):
@@ -72,8 +71,6 @@ def create_generators(
 def get_generators(
         lmdb_dir,
         batch_size,
-        output_types,
-        output_shapes,
         episode_len=None,
         episode_shift=None,
 ):
@@ -82,24 +79,28 @@ def get_generators(
                                   valid_image_formats='png')
     meta = transformer.get_metadata(lmdb_dir)
 
-    training_gen, val_gen= create_generators(val_lmdb_dir=os.path.join(lmdb_dir, '_validation'),
-                                            val_num_images=meta['val_num_images'],
-                                            tra_lmdb_dir=os.path.join(lmdb_dir, '_training'),
-                                            tra_num_images=meta['tra_num_images'],
-                                            batch_size=batch_size,
-                                            episode_len=episode_len,
-                                            episode_shift=episode_shift)
+    training_gen, val_gen = create_generators(val_lmdb_dir=os.path.join(lmdb_dir, '_validation'),
+                                             val_num_images=meta['val_num_images'],
+                                             tra_lmdb_dir=os.path.join(lmdb_dir, '_training'),
+                                             tra_num_images=meta['tra_num_images'],
+                                             batch_size=batch_size,
+                                             episode_len=episode_len,
+                                             episode_shift=episode_shift)
 
 
-    # train_generator = tf.data.Dataset.from_generator(
-    #     lambda: training_gen,
-    #     output_types=output_types ,
-    #     output_shapes=output_shapes
-    # )
-    #
-    # val_generator = tf.data.Dataset.from_generator(
-    #     lambda: training_gen,
-    #     output_types=output_types ,
-    #     output_shapes=output_shapes
-    # )
-    return training_gen, val_gen
+    data = training_gen.next()
+    dtypes = {k: infer_type(v[0]) for k, v in data.items()}
+    # print('infered types ', dtypes)
+    train_generator = tf.data.Dataset.from_generator(
+        lambda: training_gen,
+        output_types=dtypes,
+    )
+
+    val_generator = tf.data.Dataset.from_generator(
+        lambda: training_gen,
+        output_types= dtypes,
+    )
+    return  train_generator, val_generator
+
+
+

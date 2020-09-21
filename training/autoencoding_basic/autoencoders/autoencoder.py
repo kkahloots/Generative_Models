@@ -1,7 +1,7 @@
 import os
 
 import tensorflow as tf
-from keras_radam import RAdam
+from tensorflow_addons.optimizers import RectifiedAdam
 
 from evaluation.quantitive_metrics.metrics import create_metrics
 from graphs.basics.AE_graph import create_graph, create_losses, encode_fn, decode_fn, generate_sample
@@ -65,7 +65,7 @@ class autoencoder(tf.keras.Model):
     # override function
     def compile(
             self,
-            optimizer=RAdam(),
+            optimizer=RectifiedAdam(),
             loss=None,
             **kwargs
     ):
@@ -89,8 +89,7 @@ class autoencoder(tf.keras.Model):
             self,
             x,
             y=None,
-            input_kw='image',
-            input_scale=1.0,
+            input_kw='images',
             steps_per_epoch=None,
             epochs=1,
             verbose=1,
@@ -107,7 +106,6 @@ class autoencoder(tf.keras.Model):
             initial_epoch=0
     ):
         self.input_kw = input_kw
-        self.input_scale = input_scale
         return \
             tf.keras.Model.fit(
                 self,
@@ -183,9 +181,9 @@ class autoencoder(tf.keras.Model):
 
     def batch_cast(self, batch):
         if self.input_kw:
-            x = tf.cast(batch[self.input_kw], dtype=tf.float32)/self.input_scale
+            x = batch[self.input_kw]
         else:
-            x = tf.cast(batch, dtype=tf.float32)/self.input_scale
+            x = batch
 
         return {
                    'inference_inputs': x,

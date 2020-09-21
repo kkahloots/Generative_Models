@@ -1,5 +1,7 @@
 import tensorflow as tf
-from keras_radam import RAdam
+from tensorflow_addons.optimizers import RectifiedAdam
+
+
 from graphs.disentangled_inferred_prior.AE_graph import create_regularized_losses
 from evaluation.quantitive_metrics.metrics import create_metrics
 from training.autoencoding_basic.autoencoders.autoencoder import autoencoder as basicAE
@@ -10,7 +12,7 @@ class Covariance_AE(basicAE):
     # override function
     def compile(
             self,
-            optimizer=RAdam(),
+            optimizer=RectifiedAdam(),
             loss=None,
             **kwargs
     ):

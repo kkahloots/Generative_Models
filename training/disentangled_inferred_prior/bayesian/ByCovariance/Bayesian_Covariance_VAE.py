@@ -1,5 +1,5 @@
 import tensorflow as tf
-from keras_radam import RAdam
+from tensorflow_addons.optimizers import RectifiedAdam
 from graphs.disentangled_inferred_prior.VAE_graph import create_Bayesian_losses
 from evaluation.quantitive_metrics.metrics import create_metrics
 from training.autoencoding_basic.autoencoders.VAE import VAE as VAE
@@ -12,7 +12,7 @@ class Bayesian_Covariance_VAE(VAE):
     # override function
     def compile(
             self,
-            optimizer=RAdam(),
+            optimizer=RectifiedAdam(),
             loss=None,
             **kwargs
     ):
