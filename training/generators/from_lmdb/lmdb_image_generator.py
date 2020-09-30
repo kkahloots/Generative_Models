@@ -21,6 +21,7 @@ class LMDB_ImageGenerator(ImageDataGenerator):
                              episode_len=None,
                              episode_shift=None,
                              shuffle=True,
+                             class_mode='categorical',
                              seed=None
                              ):
         return LMDB_ImageIterator(
@@ -30,6 +31,7 @@ class LMDB_ImageGenerator(ImageDataGenerator):
             batch_size=batch_size,
             episode_len=episode_len,
             episode_shift=episode_shift,
+            class_mode = class_mode,
             shuffle=shuffle,
             seed=seed)
 
@@ -41,7 +43,8 @@ def create_generators(
         tra_num_images,
         batch_size,
         episode_len=None,
-        episode_shift=None
+        episode_shift=None,
+        class_mode='categorical'
 ):
     train_datagen = LMDB_ImageGenerator()
 
@@ -54,6 +57,7 @@ def create_generators(
         batch_size=batch_size,
         episode_len=episode_len,
         episode_shift=episode_shift,
+        class_mode=class_mode,
         seed=0)
 
     validation_generator = valid_datagen.flow_from_lmdb_lists(
@@ -63,6 +67,7 @@ def create_generators(
         batch_size=batch_size,
         episode_len=episode_len,
         episode_shift=episode_shift,
+        class_mode=class_mode,
         seed=0)
 
     return train_generator, validation_generator
@@ -73,6 +78,7 @@ def get_generators(
         batch_size,
         episode_len=None,
         episode_shift=None,
+        class_mode='categorical'
 ):
     transformer = LmdbTransformer(image_dir=lmdb_dir,
                                   validation_pct=20,
@@ -85,7 +91,9 @@ def get_generators(
                                              tra_num_images=meta['tra_num_images'],
                                              batch_size=batch_size,
                                              episode_len=episode_len,
-                                             episode_shift=episode_shift)
+                                             episode_shift=episode_shift,
+                                             class_mode = class_mode
+                                             )
 
 
     data = training_gen.next()
