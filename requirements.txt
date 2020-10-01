@@ -65,7 +65,6 @@ matplotlib<=3.1.2
 mistune<=0.8.4
 mkl-fft<=1.0.15
 mkl-random<=1.1.0
-mkl-service<=2.3.0
 more-itertools<=7.2.0
 MouseInfo<=0.1.2
 msgpack<=0.6.1
