@@ -108,7 +108,7 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
 
     def inception_predictions_generator():
         while True:
-            images = next(data_generator)
+            images = next(data_generator)['images']
             if images.shape[-2] < 75:
                 new_size = [75, 75]
                 resize_fn = lambda image: tf.image.resize(image, new_size)
@@ -128,7 +128,7 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
 
     def inception_predictions_generator():
         while True:
-            images = next(data_generator)
+            images = next(data_generator)['images']
             if images.shape[-2] < 75:
                 new_size = [75, 75]
                 resize_fn = lambda image: tf.image.resize(image, new_size)
@@ -154,7 +154,7 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
     def generated_predictions_generator():
         while True:
             # Generate latents from the data
-            data = next(data_generator)
+            data = next(data_generator)['images']
             if data.shape[-2] < 75:
                 new_size = [75, 75]
                 resize_fn = lambda image: tf.image.resize(image, new_size)
@@ -184,7 +184,7 @@ def frechet_inception_distance(model, data_generator, tolerance_threshold=1e-6, 
     def generated_predictions_generator():
         while True:
             # Generate latents from the data
-            data = next(data_generator)
+            data = next(data_generator)['images']
             if data.shape[-2] < 75:
                 new_size = [75, 75]
                 resize_fn = lambda image: tf.image.resize(image, new_size)

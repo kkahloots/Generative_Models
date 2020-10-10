@@ -105,7 +105,7 @@ def get_generators(
     )
 
     val_generator = tf.data.Dataset.from_generator(
-        lambda: training_gen,
+        lambda: val_gen,
         output_types= dtypes,
     )
     return  train_generator, val_generator

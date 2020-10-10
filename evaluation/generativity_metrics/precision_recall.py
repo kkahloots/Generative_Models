@@ -132,7 +132,7 @@ def precision_score(model, data_generator, nhood_size=3, row_batch_size=10000, c
     # prepare the ae model random_images_generator
     def model_random_images_generator():
         while True:
-            data = next(data_generator)
+            data = next(data_generator)['images']
             ref_features = VGG16_featues_fn(data)
 
             # Generate latents from the data
@@ -174,7 +174,7 @@ def recall_score(model, data_generator, nhood_size=3, row_batch_size=10000, col_
     # prepare the ae model random_images_generator
     def model_random_images_generator():
         while True:
-            data = next(data_generator)
+            data = next(data_generator)['images']
             ref_features = VGG16_featues_fn(data)
 
             # Generate latents from the data

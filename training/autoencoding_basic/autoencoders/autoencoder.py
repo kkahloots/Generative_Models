@@ -156,7 +156,7 @@ class autoencoder(tf.keras.Model):
 
     # autoencoder function
     def encode(self, x):
-        return self.__encode__(inference_inputs={'inference_inputs': x})['generative_inputs']
+        return self.__encode__(inference_inputs={'inference_inputs': x})['z_latents']
 
     # autoencoder function
     def decode(self, latents):
