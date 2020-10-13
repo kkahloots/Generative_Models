@@ -10,7 +10,7 @@ import os
 
 def reconstruct_from_a_batch(model, data_generator, save_dir):
     # Generate latents from the data
-    original_data = next(data_generator)
+    original_data = next(data_generator)['images']
     if isinstance(original_data, tuple):
         original_data = original_data[0]
     images = model.reconstruct(original_data).numpy()
@@ -58,7 +58,7 @@ def generate_images_like_a_batch(model, data_generator, save_dir):
     epsilon = 1e-3
 
     # Generate latents from the data
-    original_data = next(data_generator)
+    original_data = next(data_generator)['images']
     if isinstance(original_data, tuple):
         original_data = original_data[0]
     latents_real = model.encode(original_data)
@@ -91,7 +91,7 @@ def generate_images_randomly(model, save_dir):
 
 def interpolate_a_batch(model, data_generator, save_dir, delay=10):
     # Generate latents from the data
-    original_data = next(data_generator)
+    original_data = next(data_generator)['images']
     if isinstance(original_data, tuple):
         original_data = original_data[0]
     images = []
@@ -119,6 +119,7 @@ def interpolate_a_batch(model, data_generator, save_dir, delay=10):
             i += 1
 
     movie_name = os.path.join(save_dir, model.name + '_interpolate.gif')
+
     images_flat[0].save(movie_name, save_all=True, append_images=images_flat[1:], duration=len(images_flat) * delay,
                         loop=0xffff)
 

@@ -51,7 +51,7 @@ def perceptual_path_length_score(model, data_generator, tolerance_threshold=1e-6
     def model_random_images_generator():
         while True:
             # Generate latents from the data
-            latents_real = model.encode(next(data_generator))
+            latents_real = model.encode(next(data_generator)['images'])
 
             # Generate random latents and interpolation t-values.
             latents_t = np.random.normal(size=latents_real.shape)
