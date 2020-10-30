@@ -93,7 +93,7 @@ class DSprites(gt_data.GroundTruthData):
 class ColorDSprites(DSprites):
     """Color DSprites.
 
-    This data set is the same as the original DSprites data set except that when
+    This data set is the same as the 01 DSprites data set except that when
     sampling the observations X, the sprite is colored in a randomly sampled
     color.
 
@@ -125,7 +125,7 @@ class ColorDSprites(DSprites):
 class NoisyDSprites(DSprites):
     """Noisy DSprites.
 
-    This data set is the same as the original DSprites data set except that when
+    This data set is the same as the 01 DSprites data set except that when
     sampling the observations X, the background pixels are replaced with random
     noise.
 
@@ -151,7 +151,7 @@ class NoisyDSprites(DSprites):
 class ScreamDSprites(DSprites):
     """Scream DSprites.
 
-    This data set is the same as the original DSprites data set except that when
+    This data set is the same as the 01 DSprites data set except that when
     sampling the observations X, a random patch of the Scream image is sampled as
     the background and the sprite is embedded into the image by inverting the
     color of the sampled patch at the pixels of the sprite.
