@@ -78,7 +78,8 @@ def get_generators(
         batch_size,
         episode_len=None,
         episode_shift=None,
-        class_mode='categorical'
+        class_mode='categorical',
+        trans_fun=None
 ):
     transformer = LmdbTransformer(image_dir=lmdb_dir,
                                   validation_pct=20,
@@ -98,16 +99,27 @@ def get_generators(
 
     data = training_gen.next()
     dtypes = {k: infer_type(v[0]) for k, v in data.items()}
-    # print('infered types ', dtypes)
-    train_generator = tf.data.Dataset.from_generator(
-        lambda: training_gen,
-        output_types=dtypes,
-    )
 
-    val_generator = tf.data.Dataset.from_generator(
-        lambda: val_gen,
-        output_types= dtypes,
-    )
+    if trans_fun:
+        train_generator = tf.data.Dataset.from_generator(
+            lambda: trans_fun(training_gen),
+            output_types=dtypes,
+        )
+
+        val_generator = tf.data.Dataset.from_generator(
+            lambda: trans_fun(val_gen),
+            output_types= dtypes,
+        )
+    else:
+        train_generator = tf.data.Dataset.from_generator(
+            lambda: training_gen,
+            output_types=dtypes,
+        )
+
+        val_generator = tf.data.Dataset.from_generator(
+            lambda: val_gen,
+            output_types=dtypes,
+        )
     return  train_generator, val_generator
 
 
