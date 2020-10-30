@@ -15,8 +15,6 @@ class autoencoder(basicAE):
         return (self.batch_size * self.episode_len, ) + self.get_variables()['generative'].outputs[0].shape[1:][-3:]
 
     def batch_cast(self, xt0, xt1):
-        xt0 = tf.cast(xt0, dtype=tf.float32)/self.input_scale
-        xt1 = tf.cast(xt1, dtype=tf.float32) / self.input_scale
 
         return {
                    'inference_inputs': xt0
