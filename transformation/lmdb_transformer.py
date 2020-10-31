@@ -18,7 +18,7 @@ from transformation.data_utils import NumpyEncoder
 class LmdbTransformer:
     def __init__(self, validation_pct, valid_image_formats, image_dir=None, data_format=None, scalar=255.0):
         if image_dir is not None:
-            self.image_lists = create_image_lists(image_dir, validation_pct, valid_image_formats, verbose=0 , sequenced = True)
+            self.image_lists = create_image_lists(image_dir, validation_pct, valid_image_formats, verbose=0)
         self.scaler = scalar
         if data_format is None:
             self.data_format = K.image_data_format()
