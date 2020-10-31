@@ -17,7 +17,6 @@ class DatasetWrapper:
         images = np.frombuffer(self.image, dtype=np.float32) #pay attention if you  don't use create_image_lists
         return images.reshape(*self.size, self.channels)     #then dtype will be different
 
-        import numpy as np
 
 #Wrapper class for dataset
 class SRDatasetWrapper:

@@ -8,17 +8,17 @@ import lmdb
 from tensorflow.keras import backend as K
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
-from transformation.file_image_generator import create_image_lists
-from transformation.file_utils import get_file_path, create_if_not_exist
-from transformation.wrappers import SRDatasetWrapper
-from transformation.wrappers import DatasetWrapper
-from transformation.data_utils import NumpyEncoder
+from LMDB_Datasets.transformation.file_image_generator import create_image_lists
+from LMDB_Datasets.transformation.file_utils import get_file_path, create_if_not_exist
+from LMDB_Datasets.transformation.wrappers import SRDatasetWrapper
+from LMDB_Datasets.transformation.wrappers import DatasetWrapper
+from LMDB_Datasets.transformation.data_utils import NumpyEncoder
 
 
 class LmdbTransformer:
     def __init__(self, validation_pct, valid_image_formats, image_dir=None, data_format=None, scalar=255.0):
         if image_dir is not None:
-            self.image_lists = create_image_lists(image_dir, validation_pct, valid_image_formats, verbose=0)
+            self.image_lists = create_image_lists(image_dir, validation_pct, valid_image_formats, verbose=0 , sequenced = True)
         self.scaler = scalar
         if data_format is None:
             self.data_format = K.image_data_format()
