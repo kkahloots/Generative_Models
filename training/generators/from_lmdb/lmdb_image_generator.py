@@ -5,7 +5,7 @@ import re
 import warnings
 import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator
-from transformation.lmdb_transformer import LmdbTransformer
+from LMDB_Datasets.transformation.lmdb_transformer import LmdbTransformer
 
 
 from utils.data_and_files.data_utils import as_bytes, infer_type

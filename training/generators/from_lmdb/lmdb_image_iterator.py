@@ -49,7 +49,8 @@ class LMDB_ImageIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         #print(index_array)
-        images, labels = [], {}
+        images, labels = {}, {}
+        image_for_source, image_for_target=[], []
 
         if len(index_array) < self.batch_size:
             diff = self.batch_size // len(index_array) + 1
@@ -137,7 +138,8 @@ class LMDB_ImageIterator(Iterator):
                 for image_id in index_array:
                     data = txn.get(f"{image_id:08}".encode("ascii"))
                     dataset = pickle.loads(data)
-                    images.append(dataset.get_image())
+                    image_for_source.append(dataset.get_image_for_source())
+                    image_for_target.append(dataset.get_image_for_target())
                     labels_list = [attr for attr in dir(dataset) if
                                    not callable(getattr(dataset, attr)) and (not attr.startswith("__")) and
                                    (not attr in ['image', 'channels', 'size'])]
@@ -148,4 +150,5 @@ class LMDB_ImageIterator(Iterator):
                             labels[label].append(eval(f'dataset.{label}'))
                         else:
                             labels.update({label: [eval(f'dataset.{label}')]})
-                return {'images': images, **labels}
+                images={'image_source':image_for_source, 'image_target':image_for_target}
+                return {**images, **labels}
