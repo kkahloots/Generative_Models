@@ -95,7 +95,7 @@ def convert_img(img, grayscale=False, color_mode='rgb', target_size=None, interp
         color_mode: The desired image format. One of "grayscale", "rgb", "rgba".
             "grayscale" supports 8-bit images and 32-bit signed integer images.
             Default: "rgb".
-        target_size: Either `None` (default to 01 size)
+        target_size: Either `None` (default to a size)
             or tuple of ints `(img_height, img_width)`.
         interpolation: Interpolation method used to resample the image if the
             target size is different from that of the loaded image.

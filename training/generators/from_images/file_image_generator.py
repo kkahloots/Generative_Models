@@ -5,7 +5,7 @@ import os
 import re
 import warnings
 
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 from utils.data_and_files.data_utils import as_bytes
 from utils.reporting.logging import log_message

@@ -3,7 +3,7 @@ import numpy as np
 import dask.array as da
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import Iterator, load_img, img_to_array, array_to_img
-from keras import backend as K
+from tensorflow.keras import backend as K
 import logging
 from utils.reporting.logging import log_message
 from utils.data_and_files.file_utils import get_file_path

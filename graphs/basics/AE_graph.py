@@ -20,6 +20,16 @@ def create_graph(name, variables_params, restore=None):
 def create_losses():
     return {'x_logits': cross_entropy}
 
+def create_trans_losses(input_fn=None, output_fn=None):
+    def cross_entropy_fn(x_true, x_logits):
+        if input_fn:
+            x_true = input_fn(x_true)
+        if input_fn:
+            x_logits = output_fn(x_true)
+        return cross_entropy_fn(x_true, x_logits)
+
+    return {'x_logits': cross_entropy_fn}
+
 def cross_entropy(inputs, x_logits):
     reconstruction_loss = expected_loglikelihood_with_lower_bound(x_true=inputs, x_logits=x_logits)
     Px_xreconst = tf.reduce_mean(-reconstruction_loss)

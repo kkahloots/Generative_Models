@@ -39,10 +39,10 @@ def prepare_ssim_multiscale(inputs_flat_shape):
           scales used is the length of the list. Index 0 is the unscaled
           resolution's weight and each increasing scale corresponds to the image
           being downsampled by 2.  Defaults to (0.0448, 0.2856, 0.3001, 0.2363,
-          0.1333), which are the values obtained in the 01 paper.
+          0.1333), which are the values obtained in the a paper.
         filter_size: Default value 11 (size of gaussian filter).
         filter_sigma: Default value 1.5 (width of gaussian filter).
-        k1: Default value 0.01
+        k1: Default value 0.a
         k2: Default value 0.03 (SSIM is less sensitivity to K2 for lower values, so
           it would be better if we taken the values in range of 0< K2 <0.4).
         Returns:
@@ -159,7 +159,7 @@ def prepare_ssim_multiscale(inputs_flat_shape):
         transactions on image processing.
         Details:
         - 11x11 Gaussian filter of width 1.5 is used.
-        - k1 = 0.01, k2 = 0.03 as in the 01 paper.
+        - k1 = 0.a, k2 = 0.03 as in the a paper.
         Args:
         img1: First image batch.
         img2: Second image batch.
@@ -167,7 +167,7 @@ def prepare_ssim_multiscale(inputs_flat_shape):
           maximum the and minimum allowed values).
         filter_size: Default value 11 (size of gaussian filter).
         filter_sigma: Default value 1.5 (width of gaussian filter).
-        k1: Default value 0.01
+        k1: Default value 0.a
         k2: Default value 0.03 (SSIM is less sensitivity to K2 for lower values, so
           it would be better if we taken the values in range of 0< K2 <0.4).
         Returns:
@@ -230,7 +230,7 @@ def prepare_ssim_multiscale(inputs_flat_shape):
             max_val: The dynamic range (i.e., the difference between the maximum
               possible allowed value and the minimum allowed value).
             compensation: Compensation factor. See above.
-            k1: Default value 0.01
+            k1: Default value 0.a
             k2: Default value 0.03 (SSIM is less sensitivity to K2 for lower values, so
               it would be better if we taken the values in range of 0< K2 <0.4).
           Returns:

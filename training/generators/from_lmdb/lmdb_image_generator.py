@@ -1,15 +1,10 @@
-import hashlib
-import logging
 import os
-import re
-import warnings
 import tensorflow as tf
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from transformation.lmdb_transformer import LmdbTransformer
 
 
-from utils.data_and_files.data_utils import as_bytes, infer_type
-from utils.reporting.logging import log_message
+from utils.data_and_files.data_utils import infer_type
 from training.generators.from_lmdb.lmdb_image_iterator import LMDB_ImageIterator
 
 class LMDB_ImageGenerator(ImageDataGenerator):
