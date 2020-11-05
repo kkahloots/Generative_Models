@@ -1,14 +1,9 @@
-import os
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing.image import Iterator, img_to_array, array_to_img
-from tensorflow.keras import backend as K
-import logging
-from utils.reporting.logging import log_message
-from utils.data_and_files.file_utils import get_file_path
-import lmdb
 import pickle
-from utils.data_and_files.data_utils import convert_img
+
+import lmdb
+import numpy as np
+from tensorflow.keras.preprocessing.image import Iterator
+
 
 class LMDB_ImageIterator(Iterator):
 
@@ -39,7 +34,6 @@ class LMDB_ImageIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
         print("Initializing Iterator " + category + " Number of images " + str(num_images))
-        #print(category, lmdb_dir, batch_size, shuffle, seed)
         self.env = lmdb.open(lmdb_dir, readonly=True)
 
         Iterator.__init__(self, num_images, batch_size, shuffle, seed)
@@ -138,8 +132,7 @@ class LMDB_ImageIterator(Iterator):
                 for image_id in index_array:
                     data = txn.get(f"{image_id:08}".encode("ascii"))
                     dataset = pickle.loads(data)
-                    image_for_source.append(dataset.get_image_for_source())
-                    image_for_target.append(dataset.get_image_for_target())
+                    image_for_source.append(dataset.get_image())
                     labels_list = [attr for attr in dir(dataset) if
                                    not callable(getattr(dataset, attr)) and (not attr.startswith("__")) and
                                    (not attr in ['image', 'channels', 'size'])]
@@ -151,8 +144,7 @@ class LMDB_ImageIterator(Iterator):
                         else:
                             labels.update({label: [eval(f'dataset.{label}')]})
 
-                images={'image_source':image_for_source, 'image_target':image_for_target}
-                return {**images, **labels}
+                return {'images':image_for_source, **labels}
 
             elif self.class_mode == 'sr':
                 for image_id in index_array:
@@ -175,6 +167,4 @@ class LMDB_ImageIterator(Iterator):
                         else:
                             labels.update({label: [eval(f'dataset.{label}')]})
 
-                #print('labels', labels.keys())
-                images = {'image_source': image_for_source, 'image_target': image_for_target,  **labels}
-                return images #labels#{'image_source': image_for_source, 'image_target': image_for_target}#{**images,}
+                return {'image_source': image_for_source, 'image_target': image_for_target,  **labels}

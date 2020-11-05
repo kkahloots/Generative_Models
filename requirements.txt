@@ -3,3 +3,4 @@ lmdb
 colorlog
 tensorflow_addons
 tensorflow_probability
+imageio
