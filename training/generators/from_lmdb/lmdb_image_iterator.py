@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import tensorflow as tf
-from keras.preprocessing.image import Iterator, img_to_array, array_to_img
-from keras import backend as K
+from tensorflow.keras.preprocessing.image import Iterator, img_to_array, array_to_img
+from tensorflow.keras import backend as K
 import logging
 from utils.reporting.logging import log_message
 from utils.data_and_files.file_utils import get_file_path
@@ -150,5 +150,31 @@ class LMDB_ImageIterator(Iterator):
                             labels[label].append(eval(f'dataset.{label}'))
                         else:
                             labels.update({label: [eval(f'dataset.{label}')]})
+
                 images={'image_source':image_for_source, 'image_target':image_for_target}
                 return {**images, **labels}
+
+            elif self.class_mode == 'sr':
+                for image_id in index_array:
+                    data = txn.get(f"{image_id:08}".encode("ascii"))
+                    dataset = pickle.loads(data)
+
+                    source = dataset.get_image_for_source()
+                    target = dataset.get_image_for_target()
+
+                    image_for_source.append(source)
+                    image_for_target.append(target)
+                    labels_list = [attr for attr in dir(dataset) if
+                                   not callable(getattr(dataset, attr)) and (not attr.startswith("__")) and
+                                   (not attr in ['image_target', 'image_source', 'channels', 'size'])]
+
+                    for label in labels_list:
+
+                        if label in labels.keys():
+                            labels[label].append(eval(f'dataset.{label}'))
+                        else:
+                            labels.update({label: [eval(f'dataset.{label}')]})
+
+                #print('labels', labels.keys())
+                images = {'image_source': image_for_source, 'image_target': image_for_target,  **labels}
+                return images #labels#{'image_source': image_for_source, 'image_target': image_for_target}#{**images,}
