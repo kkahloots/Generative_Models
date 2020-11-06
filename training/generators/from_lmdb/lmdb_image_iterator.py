@@ -44,7 +44,7 @@ class LMDB_ImageIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         #print(index_array)
         images, labels = {}, {}
-        image_for_source, image_for_target=[], []
+        xt0, xt1=[], []
 
         if len(index_array) < self.batch_size:
             diff = self.batch_size // len(index_array) + 1
@@ -87,7 +87,7 @@ class LMDB_ImageIterator(Iterator):
                         imgs += [frame.get_image()]
                     imgs = np.array(imgs)
                     batch_gt[i] = imgs
-                return {"xt0": batch_x, "xt1": batch_gt}
+                return {"xt1": batch_x, "xt1": batch_gt}
 
             elif self.class_mode == 'episode_flat':
                 if self.class_mode == 'episode':
@@ -127,12 +127,12 @@ class LMDB_ImageIterator(Iterator):
                         imgs = np.array(imgs)
                         batch_gt[i] = imgs
 
-                return {"xt0": np.reshape(batch_x, (-1,) + self.image_shape), "xt1": np.reshape(batch_gt, (-1,) + self.image_shape)}
+                return {"xt1": np.reshape(batch_x, (-1,) + self.image_shape), "xt1": np.reshape(batch_gt, (-1,) + self.image_shape)}
             elif self.class_mode == 'categorical':
                 for image_id in index_array:
                     data = txn.get(f"{image_id:08}".encode("ascii"))
                     dataset = pickle.loads(data)
-                    image_for_source.append(dataset.get_image())
+                    xt0.append(dataset.get_image())
                     labels_list = [attr for attr in dir(dataset) if
                                    not callable(getattr(dataset, attr)) and (not attr.startswith("__")) and
                                    (not attr in ['image', 'channels', 'size'])]
@@ -144,21 +144,21 @@ class LMDB_ImageIterator(Iterator):
                         else:
                             labels.update({label: [eval(f'dataset.{label}')]})
 
-                return {'images':image_for_source, **labels}
+                return {'images':xt0, **labels}
 
             elif self.class_mode == 'sr':
                 for image_id in index_array:
                     data = txn.get(f"{image_id:08}".encode("ascii"))
                     dataset = pickle.loads(data)
 
-                    source = dataset.get_image_for_source()
-                    target = dataset.get_image_for_target()
+                    source = dataset.get_xt0()
+                    target = dataset.get_xt1()
 
-                    image_for_source.append(source)
-                    image_for_target.append(target)
+                    xt0.append(source)
+                    xt1.append(target)
                     labels_list = [attr for attr in dir(dataset) if
                                    not callable(getattr(dataset, attr)) and (not attr.startswith("__")) and
-                                   (not attr in ['image_target', 'image_source', 'channels', 'size'])]
+                                   (not attr in ['xt1', 'xt0', 'channels', 'size'])]
 
                     for label in labels_list:
 
@@ -167,4 +167,4 @@ class LMDB_ImageIterator(Iterator):
                         else:
                             labels.update({label: [eval(f'dataset.{label}')]})
 
-                return {'image_source': image_for_source, 'image_target': image_for_target,  **labels}
+                return {'xt0': xt0, 'xt1': xt1,  **labels}

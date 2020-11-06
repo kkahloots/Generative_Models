@@ -161,7 +161,7 @@ class SRLmdbTransformer:
             else:
                 image_target = img
 
-            value = SRDatasetWrapper(image_source=img, image_target=image_target, labels_dict=labels_dict)
+            value = SRDatasetWrapper(xt0=img, xt1=image_target, labels_dict=labels_dict)
             key = f"{index:08}"
 
             txn.put(key.encode("ascii"), pickle.dumps(value))
@@ -245,7 +245,6 @@ class SRLmdbTransformer:
 
                 label_dict = labels_fn(img_path)
                 name = lmdb_dir + os.sep + '_{}'.format(category)
-
 
                 self.store_single_lmdb(index=lmdb_index, filename=name, img=img, labels_dict=label_dict,
                                        num_images=total_number_of_img)
